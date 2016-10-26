@@ -1,0 +1,73 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.jakewharton.hugo'
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion "24.0.3"
+    defaultConfig {
+        applicationId "com.abby.redditgo"
+        minSdkVersion 16
+        targetSdkVersion 24
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    buildTypes.each {
+        it.buildConfigField 'String', 'REDDIT_APP_OWNER', '"redditgo"'
+        it.buildConfigField 'String', 'REDDIT_SCRIPT_CLIENT_ID', '"70W6KTqjiNVs6g"'
+        it.buildConfigField 'String', 'REDDIT_SCRIPT_CLIENT_SECRET', '"pIii0T4uydy0zwgBCR_QXJZmmaQ"'
+        it.buildConfigField 'String', 'REDDIT_SCRIPT_REDIRECT_URL', '"https://github.com/leftleg07/udacity-redditgo"'
+
+        it.buildConfigField 'String', 'REDDIT_INSTALLED_CLIENT_ID', '"e9t7mgVtbjSGvg"'
+        it.buildConfigField 'String', 'REDDIT_INSTALLED_REDIRECT_URI', '"https://github.com/leftleg07/udacity-redditgo"'
+
+        it.buildConfigField 'String', 'REDDIT_WEB_CLIENT_ID', '"69RTve7ITlhFnA"'
+        it.buildConfigField 'String', 'REDDIT_WEB_CLIENT_SECRET', '"_Mk-NAgLGk_toZC9q70Cc2EI0c0"'
+        it.buildConfigField 'String', 'REDDIT_WEB_REDIRECT_URL', '"http://michaelvas.github.io/reddit-app/"'
+    }
+    packagingOptions {
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+    }
+    configurations {
+        androidTestCompile.exclude group: 'com.android.support', module: 'support-annotations'
+        androidTestCompile.exclude group: 'com.google.guava', module: 'guava'
+    }
+
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(':library')
+    compile 'com.facebook.stetho:stetho:1.4.1'
+    compile 'io.reactivex:rxjava:1.2.1'
+    compile 'com.android.support:appcompat-v7:24.2.1'
+
+    compile 'com.orhanobut:logger:1.15'
+    compile 'com.squareup.okhttp3:okhttp:3.4.1'
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+
+    compile 'org.slf4j:slf4j-api:1.7.13'
+    compile 'org.slf4j:slf4j-simple:1.7.13'
+
+
+    // Testing-only dependencies
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.testng:testng:6.9.10'
+    testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
+
+    // Android JUnit Runner
+    androidTestCompile 'com.android.support.test:runner:0.5'
+    // JUnit4 Rules
+    androidTestCompile 'com.android.support.test:rules:0.5'
+    // Espresso core
+    androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.2'
+    androidTestCompile 'com.google.truth:truth:0.29'
+
+}
