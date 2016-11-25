@@ -97,7 +97,7 @@ public class AccountManagerTest extends RedditTest {
         }
 
         if (toEdit == null) {
-            throw new IllegalStateException("Could not find any recent self posts");
+            throw new IllegalStateException("Could not find any recent img_self posts");
         }
 
         try {
@@ -362,7 +362,7 @@ public class AccountManagerTest extends RedditTest {
                 // There is already a stickied post
                 submission = submissions.get(0);
             } else {
-                // Find the first self post
+                // Find the first img_self post
                 for (Submission s : submissions) {
                     if (s.isSelfPost()) {
                         submission = s;
@@ -373,7 +373,7 @@ public class AccountManagerTest extends RedditTest {
         }
 
         if (submission == null)
-            throw new IllegalStateException("No self posts in " + modOf);
+            throw new IllegalStateException("No img_self posts in " + modOf);
 
         boolean expected = !(submission.isStickied());
         try {
@@ -461,7 +461,7 @@ public class AccountManagerTest extends RedditTest {
             validateModel(breakdown);
 
             for (String subreddit : breakdown.getSummaries().keySet()) {
-                // Make sure the link and comment karma properties are not null
+                // Make sure the img_link and comment karma properties are not null
                 breakdown.getCommentKarma(subreddit);
                 breakdown.getLinkKarma(subreddit);
             }

@@ -92,7 +92,7 @@ public class InternalsTest extends RedditTest {
 
         e = new OAuthException("test");
         assertEquals(e.getReason(), "test");
-        assertEquals(e.getExplanation(), "(no or unknown reason)");
+        assertEquals(e.getExplanation(), "(no or img_unknown reason)");
 
         NullPointerException cause = new NullPointerException();
         e = new OAuthException("test", cause);

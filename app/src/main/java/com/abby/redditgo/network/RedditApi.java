@@ -1,7 +1,6 @@
-package com.abby.redditgo.data;
+package com.abby.redditgo.network;
 
 import com.abby.redditgo.BuildConfig;
-import com.abby.redditgo.MainApplication;
 import com.orhanobut.logger.Logger;
 
 import net.dean.jraw.RedditClient;
@@ -20,8 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import rx.Single;
+import java.util.UUID;
 
 /**
  * Created by gsshop on 2016. 10. 11..
@@ -29,19 +27,25 @@ import rx.Single;
 public class RedditApi {
     private static final String TAG = RedditApi.class.getSimpleName();
 
-    public static String signIn(String username, String password) {
-        return Single.just(doSignIn(username, password)).toBlocking().value();
-    }
+    public static void anonymous(UUID deviceId) {
+        String clientId = BuildConfig.REDDIT_INSTALLED_CLIENT_ID;
 
-    public static void anonymous() {
-        doApplication();
+        String redirectUrl = BuildConfig.REDDIT_INSTALLED_REDIRECT_URI;
+        Credentials credentials = Credentials.userlessApp(clientId, deviceId);
+        RedditClient reddit = AuthenticationManager.get().getRedditClient();
+        try {
+            OAuthData data = reddit.getOAuthHelper().easyAuth(credentials);
+            reddit.authenticate(data);
+        } catch (OAuthException e) {
+           Logger.e(e, "Could not authenticate");
+        }
     }
     public static boolean isAuthorized() {
         RedditClient reddit = AuthenticationManager.get().getRedditClient();
         return reddit.isAuthenticated() && reddit.hasActiveUserContext();
     }
 
-    private static String doSignIn(String username, String password) {
+    public static String signIn(String username, String password) {
         String clientId = BuildConfig.REDDIT_SCRIPT_CLIENT_ID;
         String clientSecret = BuildConfig.REDDIT_SCRIPT_CLIENT_SECRET;
 
@@ -57,44 +61,10 @@ public class RedditApi {
         }
     }
 
-    private static void doApplication() {
-        String clientId = BuildConfig.REDDIT_INSTALLED_CLIENT_ID;
-
-        String redirectUrl = BuildConfig.REDDIT_INSTALLED_REDIRECT_URI;
-        Credentials credentials = Credentials.userlessApp(clientId, MainApplication.getUuid());
-        RedditClient reddit = AuthenticationManager.get().getRedditClient();
-        try {
-            OAuthData data = reddit.getOAuthHelper().easyAuth(credentials);
-            reddit.authenticate(data);
-        } catch (OAuthException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * fetch front page
-     */
-
-    public static void fetchFrontPage() {
-        RedditClient reddit = AuthenticationManager.get().getRedditClient();
-        SubredditPaginator paginator = new SubredditPaginator(reddit);
-        int i = 0;
-        while (paginator.hasNext()) {
-            Listing<Submission> submissions = paginator.next();
-            for (Submission s : submissions) {
-                if (!s.isNsfw()) {
-                    Logger.i("" + i + " - " + s.getTitle());
-                    i++;
-                }
-            }
-        }
-    }
-
-
     /**
      * fetch subreddits
      */
-    public static void fetchSubreddits() {
+    public static List<Subreddit> fetchSubreddits() {
         RedditClient reddit = AuthenticationManager.get().getRedditClient();
 
         UserSubredditsPaginator paginator = new UserSubredditsPaginator(reddit, "subscriber");
@@ -118,31 +88,28 @@ public class RedditApi {
             });
         }
 
-        int i = 0;
-        for(Subreddit subreddit: latestSubreddits) {
-            Logger.i("" + i + " - " + subreddit.getId() + " : " + subreddit.getDisplayName());
-            i++;
-        }
+       return latestSubreddits;
     }
 
 
     /**
      * fetch subreddit's submissions
      */
-    public static void fetchSubmissions(String subreddit) {
+    public static List<Submission> fetchSubmissions(String subreddit, Sorting sorting) {
         RedditClient reddit = AuthenticationManager.get().getRedditClient();
         SubredditPaginator paginator = new SubredditPaginator(reddit, subreddit);
-        paginator.setSorting(Sorting.HOT);
-        int i = 0;
+        paginator.setSorting(sorting);
+        List<Submission> latestSubmissions = new ArrayList<>();
         while (paginator.hasNext()) {
             Listing<Submission> submissions = paginator.next();
-            for (Submission s : submissions) {
-                if (!s.isNsfw()) {
-                    Logger.i("" + i + " - " + s.getTitle());
-                    i++;
+            for (Submission submission : submissions) {
+                if (!submission.isNsfw()) {
+                    latestSubmissions.add(submission);
                 }
             }
         }
+
+        return latestSubmissions;
     }
 
 }

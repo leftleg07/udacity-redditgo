@@ -75,7 +75,7 @@ public abstract class RedditTest {
         String method = getCallingMethod();
         switch (e.getReason().toUpperCase()) {
             case "QUOTA_FILLED":
-                msg = String.format("Skipping %s(), link posting quota has been filled for this user", method);
+                msg = String.format("Skipping %s(), img_link posting quota has been filled for this user", method);
                 break;
             case "RATELIMIT":
                 msg = String.format("Skipping %s(), reached ratelimit (%s)", method, e.getExplanation());
