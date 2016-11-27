@@ -23,5 +23,32 @@
     android:padding="16dp"
     android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:rowCount="2"
+        android:columnCount="2">
+
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_columnSpan="1"
+            android:layout_rowSpan="2"
+            android:background="#ff0000"
+            android:text="1" />
+
+        <TextView
+            android:layout_height="88dp"
+            android:layout_gravity="fill_horizontal"
+            android:background="#00ff00"
+            android:text="2" />
+
+
+        <TextView
+            android:layout_gravity="fill"
+            android:background="#0000ff"
+            android:text="2" />
+
+    </GridLayout>
+
 
 </FrameLayout>

@@ -1,6 +1,6 @@
 package com.abby.redditgo;
 
-import android.app.Application;
+import android.support.multidex.MultiDexApplication;
 
 import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.di.ApplicationModule;
@@ -18,7 +18,7 @@ import net.dean.jraw.http.LoggingMode;
  * Created by gsshop on 2016. 10. 11..
  */
 
-public class MainApplication extends Application {
+public class MainApplication extends MultiDexApplication {
 
     private static MainApplication instance;
     public static MainApplication getInstance() {

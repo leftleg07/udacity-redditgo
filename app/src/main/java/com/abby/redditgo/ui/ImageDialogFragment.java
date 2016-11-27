@@ -5,12 +5,10 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
-import android.util.Log;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import com.abby.redditgo.R;
 import com.bumptech.glide.Glide;
@@ -18,8 +16,6 @@ import com.bumptech.glide.Glide;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import uk.co.senab.photoview.PhotoView;
-import uk.co.senab.photoview.PhotoViewAttacher;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -37,8 +33,7 @@ public class ImageDialogFragment extends DialogFragment {
 
 
     @BindView(R.id.image)
-    PhotoView mImageView;
-    private GestureDetector gestureDetector;
+    ImageView mImageView;
 
     public ImageDialogFragment() {
         // Required empty public constructor
@@ -69,62 +64,6 @@ public class ImageDialogFragment extends DialogFragment {
             mImageUrl = getArguments().getString(ARG_IMAGE_URL_PARAM);
         }
 
-        gestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener(){
-            @Override
-            public boolean onDown(MotionEvent event) {
-                Log.d(DEBUG_TAG,"onDown: " + event.toString());
-                return true;
-            }
-
-            @Override
-            public boolean onFling(MotionEvent event1, MotionEvent event2,
-                                   float velocityX, float velocityY) {
-                Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
-                return true;
-            }
-
-            @Override
-            public void onLongPress(MotionEvent event) {
-                Log.d(DEBUG_TAG, "onLongPress: " + event.toString());
-            }
-
-            @Override
-            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
-                                    float distanceY) {
-                Log.d(DEBUG_TAG, "onScroll: " + e1.toString()+e2.toString());
-                return true;
-            }
-
-            @Override
-            public void onShowPress(MotionEvent event) {
-                Log.d(DEBUG_TAG, "onShowPress: " + event.toString());
-            }
-
-            @Override
-            public boolean onSingleTapUp(MotionEvent event) {
-                Log.d(DEBUG_TAG, "onSingleTapUp: " + event.toString());
-                return true;
-            }
-
-            @Override
-            public boolean onDoubleTap(MotionEvent event) {
-                Log.d(DEBUG_TAG, "onDoubleTap: " + event.toString());
-                return true;
-            }
-
-            @Override
-            public boolean onDoubleTapEvent(MotionEvent event) {
-                Log.d(DEBUG_TAG, "onDoubleTapEvent: " + event.toString());
-                return true;
-            }
-
-            @Override
-            public boolean onSingleTapConfirmed(MotionEvent event) {
-                Log.d(DEBUG_TAG, "onSingleTapConfirmed: " + event.toString());
-                return true;
-            }
-        });
-
 
 
     }
@@ -142,20 +81,6 @@ public class ImageDialogFragment extends DialogFragment {
         ButterKnife.bind(this, view);
 
         Glide.with(getContext()).load(mImageUrl).placeholder(R.drawable.img_no).into(mImageView);
-//        mImageView.setOnTouchListener(new View.OnTouchListener() {
-//            @Override
-//            public boolean onTouch(View view, MotionEvent motionEvent) {
-//                return gestureDetector.onTouchEvent(motionEvent);
-//            }
-//        });
-
-        mImageView.setOnSingleFlingListener(new PhotoViewAttacher.OnSingleFlingListener() {
-            @Override
-            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                Log.d(DEBUG_TAG, "onFling: " + e1.toString()+ ", " + e2.toString());
-                return false;
-            }
-        });
 
     }
 
