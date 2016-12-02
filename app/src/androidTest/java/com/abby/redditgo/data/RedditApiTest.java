@@ -6,8 +6,8 @@ import android.support.test.runner.AndroidJUnit4;
 import com.abby.redditgo.MockApplication;
 import com.abby.redditgo.event.SubmissionEvent;
 import com.abby.redditgo.event.SubredditEvent;
-import com.abby.redditgo.job.FetchSubmission;
-import com.abby.redditgo.job.FetchSubreddit;
+import com.abby.redditgo.job.FetchSubmissionJob;
+import com.abby.redditgo.job.FetchSubredditJob;
 import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.JobManager;
@@ -85,7 +85,7 @@ public class RedditApiTest {
             login();
         }
 
-        mJobManager.addJobInBackground(new FetchSubreddit());
+        mJobManager.addJobInBackground(new FetchSubredditJob());
         signal.await();
     }
 
@@ -103,7 +103,7 @@ public class RedditApiTest {
         if(state == NONE) {
             RedditApi.anonymous(mDeviceId);
         }
-        mJobManager.addJobInBackground(new FetchSubmission(null, Sorting.HOT));
+        mJobManager.addJobInBackground(new FetchSubmissionJob(null, Sorting.HOT));
         signal.await();
 
     }
@@ -123,7 +123,7 @@ public class RedditApiTest {
         if(state == NONE) {
             RedditApi.anonymous(mDeviceId);
         }
-        mJobManager.addJobInBackground(new FetchSubmission("all", Sorting.HOT));
+        mJobManager.addJobInBackground(new FetchSubmissionJob("all", Sorting.HOT));
         signal.await();
 
     }

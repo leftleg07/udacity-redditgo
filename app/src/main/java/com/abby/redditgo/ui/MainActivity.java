@@ -1,5 +1,6 @@
 package com.abby.redditgo.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.StringRes;
 import android.support.design.widget.NavigationView;
@@ -12,15 +13,18 @@ import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.abby.redditgo.MainApplication;
 import com.abby.redditgo.R;
 import com.abby.redditgo.di.ApplicationComponent;
+import com.abby.redditgo.event.SigninEvent;
 import com.abby.redditgo.event.SubredditEvent;
-import com.abby.redditgo.job.FetchSubmission;
-import com.abby.redditgo.job.FetchSubreddit;
+import com.abby.redditgo.job.FetchSubmissionJob;
+import com.abby.redditgo.job.FetchSubredditJob;
 import com.abby.redditgo.job.JobId;
+import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.JobManager;
 import com.birbit.android.jobqueue.TagConstraint;
 
@@ -58,6 +62,8 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
     @BindView(R.id.nav_view)
     NavigationView mNavigationView;
 
+    Button mLoginButton;
+
     TextView mTitleView;
     TextView mSubTitleView;
 
@@ -71,10 +77,8 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        ((MainApplication) getApplication()).getComponent().inject(this);
-
         setContentView(R.layout.activity_main);
+        ((MainApplication) getApplication()).getComponent().inject(this);
         ButterKnife.bind(this);
 
         mTitleView = (TextView) mToolbar.findViewById(R.id.toolbar_title);
@@ -90,12 +94,19 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
             setupDrawerContent(mNavigationView);
         }
 
+        View headerView = mNavigationView.getHeaderView(0);
+        mLoginButton = (Button) headerView.findViewById(R.id.button_login);
+        mLoginButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            }
+        });
+
         if(savedInstanceState == null) {
-            mJobManager.addJobInBackground(new FetchSubreddit());
             fetchSubmission(null, Sorting.HOT);
             mTitleView.setText(R.string.side_front_page);
         } else {
-            mJobManager.addJobInBackground(new FetchSubreddit());
             String subreddit = savedInstanceState.getString(KEY_SUBREDDIT);
             Sorting sorting = (Sorting) savedInstanceState.getSerializable(KEY_SORTING);
             String title = savedInstanceState.getString(KEY_TITLE);
@@ -162,11 +173,19 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
         }
     }
 
+    @Subscribe
+    public void onSigninEvent(SigninEvent event) {
+        if(RedditApi.isAuthorized()) {
+            mLoginButton.setVisibility(View.INVISIBLE);
+            mJobManager.addJobInBackground(new FetchSubredditJob());
+        }
+    }
+
     public void fetchSubmission(String subreddit, Sorting sorting) {
         lastSubreddit = subreddit;
         lastSorting = sorting;
         mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.FETCH_SUBMISSION_ID);
-        mJobManager.addJobInBackground(new FetchSubmission(subreddit, sorting));
+        mJobManager.addJobInBackground(new FetchSubmissionJob(subreddit, sorting));
     }
 
     private void setupDrawerContent(final NavigationView navigationView) {

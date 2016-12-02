@@ -9,7 +9,7 @@ import java.util.List;
  */
 
 public class SubredditEvent {
-    public List<Subreddit> subreddits;
+    public final List<Subreddit> subreddits;
 
     public SubredditEvent(List<Subreddit> subreddits) {
         this.subreddits = subreddits;

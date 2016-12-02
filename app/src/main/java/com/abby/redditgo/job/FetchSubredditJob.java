@@ -20,9 +20,9 @@ import java.util.UUID;
  * Created by gsshop on 2016. 10. 31..
  */
 
-public class FetchSubreddit extends Job {
+public class FetchSubredditJob extends Job {
 
-    public FetchSubreddit() {
+    public FetchSubredditJob() {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
         super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()));
@@ -46,11 +46,6 @@ public class FetchSubreddit extends Job {
 
     @Override
     public void onRun() throws Throwable {
-
-        String username = "e07skim";
-        String password = "eskim3164";
-        RedditApi.signIn(username, password);
-
 
         if (RedditApi.isAuthorized()) {
             List<Subreddit> subreddits = RedditApi.fetchSubreddits();

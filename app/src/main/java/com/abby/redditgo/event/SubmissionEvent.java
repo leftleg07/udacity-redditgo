@@ -10,9 +10,9 @@ import java.util.List;
  */
 
 public class SubmissionEvent {
-    public List<Submission> submissions;
-    public Sorting mSorting;
-    public int mPage;
+    public final List<Submission> submissions;
+    public final Sorting mSorting;
+    public final int mPage;
 
     public SubmissionEvent(List<Submission> submissions, Sorting sorting, int page) {
         this.submissions = submissions;
