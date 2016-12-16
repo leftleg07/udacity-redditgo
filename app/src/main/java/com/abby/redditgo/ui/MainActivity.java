@@ -5,10 +5,10 @@ import android.os.Bundle;
 import android.support.annotation.StringRes;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.SubMenu;
@@ -16,13 +16,15 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.abby.redditgo.MainApplication;
+import com.abby.redditgo.BaseActivity;
 import com.abby.redditgo.R;
 import com.abby.redditgo.di.ApplicationComponent;
+import com.abby.redditgo.event.AccountEvent;
 import com.abby.redditgo.event.SigninEvent;
 import com.abby.redditgo.event.SubredditEvent;
-import com.abby.redditgo.job.FetchSubmissionJob;
-import com.abby.redditgo.job.FetchSubredditJob;
+import com.abby.redditgo.job.AccountJob;
+import com.abby.redditgo.job.SubmissionFetchJob;
+import com.abby.redditgo.job.SubredditFetchJob;
 import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.JobManager;
@@ -44,7 +46,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 
-public class MainActivity extends AppCompatActivity implements MainFragment.OnFragmentInteractionListener {
+public class MainActivity extends BaseActivity implements MainFragment.OnFragmentInteractionListener {
     private static final int SUBREDDIT_MENU_INDEX = 2;
     private static final String KEY_SUBREDDIT = "_key_subreddit";
     private static final String KEY_SORTING = "_key_sorting";
@@ -63,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
     NavigationView mNavigationView;
 
     Button mLoginButton;
+    TextView mUserNameText;
 
     TextView mTitleView;
     TextView mSubTitleView;
@@ -70,15 +73,11 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
     private String lastSubreddit = null;
     private Sorting lastSorting = Sorting.HOT;
 
-    public ApplicationComponent getComponent() {
-        return ((MainApplication) getApplication()).getComponent();
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ((MainApplication) getApplication()).getComponent().inject(this);
+        EventBus.getDefault().register(this);
         ButterKnife.bind(this);
 
         mTitleView = (TextView) mToolbar.findViewById(R.id.toolbar_title);
@@ -90,20 +89,22 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
         ab.setDisplayHomeAsUpEnabled(true);
 
         mDrawerLayout.setStatusBarBackground(R.color.colorPrimaryDark);
-        if (mNavigationView != null) {
-            setupDrawerContent(mNavigationView);
-        }
 
         View headerView = mNavigationView.getHeaderView(0);
         mLoginButton = (Button) headerView.findViewById(R.id.button_login);
         mLoginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                ContextCompat.startActivity(MainActivity.this, new Intent(MainActivity.this, LoginActivity.class), null);
             }
         });
+        mUserNameText = (TextView) headerView.findViewById(R.id.text_username);
 
-        if(savedInstanceState == null) {
+        if (mNavigationView != null) {
+            setupDrawerContent(mNavigationView);
+        }
+
+        if (savedInstanceState == null) {
             fetchSubmission(null, Sorting.HOT);
             mTitleView.setText(R.string.side_front_page);
         } else {
@@ -113,6 +114,11 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
             mTitleView.setText(title);
             fetchSubmission(subreddit, sorting);
         }
+    }
+
+    @Override
+    protected void injectActivity(ApplicationComponent component) {
+        component.inject(this);
     }
 
     @OnClick(R.id.fab)
@@ -132,19 +138,13 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        EventBus.getDefault().register(this);
-    }
 
     @Override
-    public void onStop() {
-        super.onStop();
+    protected void onDestroy() {
+        super.onDestroy();
         EventBus.getDefault().unregister(this);
         mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.FETCH_SUBMISSION_ID);
     }
-
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -173,19 +173,25 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
         }
     }
 
-    @Subscribe
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSigninEvent(SigninEvent event) {
-        if(RedditApi.isAuthorized()) {
-            mLoginButton.setVisibility(View.INVISIBLE);
-            mJobManager.addJobInBackground(new FetchSubredditJob());
+        if (RedditApi.isAuthorized()) {
+            mLoginButton.setVisibility(View.GONE);
+            mUserNameText.setText(event.username);
+            mJobManager.addJobInBackground(new SubredditFetchJob());
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAccountEvent(AccountEvent event) {
+        mUserNameText.setText(event.account.getFullName());
     }
 
     public void fetchSubmission(String subreddit, Sorting sorting) {
         lastSubreddit = subreddit;
         lastSorting = sorting;
         mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.FETCH_SUBMISSION_ID);
-        mJobManager.addJobInBackground(new FetchSubmissionJob(subreddit, sorting));
+        mJobManager.addJobInBackground(new SubmissionFetchJob(subreddit, sorting));
     }
 
     private void setupDrawerContent(final NavigationView navigationView) {
@@ -215,6 +221,11 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnFr
                 });
 
         mNavigationView.getMenu().getItem(SUBREDDIT_MENU_INDEX).getSubMenu().clear();
+        if (RedditApi.isAuthorized()) {
+            mLoginButton.setVisibility(View.GONE);
+            mJobManager.addJobInBackground(new AccountJob());
+            mJobManager.addJobInBackground(new SubredditFetchJob());
+        }
     }
 
     @Override

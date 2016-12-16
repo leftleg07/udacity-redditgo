@@ -3,14 +3,19 @@ package com.abby.redditgo.network;
 import com.abby.redditgo.BuildConfig;
 import com.orhanobut.logger.Logger;
 
+import net.dean.jraw.ApiException;
 import net.dean.jraw.RedditClient;
 import net.dean.jraw.auth.AuthenticationManager;
 import net.dean.jraw.http.oauth.Credentials;
 import net.dean.jraw.http.oauth.OAuthData;
 import net.dean.jraw.http.oauth.OAuthException;
+import net.dean.jraw.managers.AccountManager;
+import net.dean.jraw.models.CommentNode;
 import net.dean.jraw.models.Listing;
+import net.dean.jraw.models.LoggedInAccount;
 import net.dean.jraw.models.Submission;
 import net.dean.jraw.models.Subreddit;
+import net.dean.jraw.models.VoteDirection;
 import net.dean.jraw.paginators.Sorting;
 import net.dean.jraw.paginators.SubredditPaginator;
 import net.dean.jraw.paginators.UserSubredditsPaginator;
@@ -26,22 +31,22 @@ import java.util.UUID;
  */
 public class RedditApi {
     private static final String TAG = RedditApi.class.getSimpleName();
+    private static final RedditClient reddit = AuthenticationManager.get().getRedditClient();
 
     public static void anonymous(UUID deviceId) {
         String clientId = BuildConfig.REDDIT_INSTALLED_CLIENT_ID;
 
         String redirectUrl = BuildConfig.REDDIT_INSTALLED_REDIRECT_URI;
         Credentials credentials = Credentials.userlessApp(clientId, deviceId);
-        RedditClient reddit = AuthenticationManager.get().getRedditClient();
         try {
             OAuthData data = reddit.getOAuthHelper().easyAuth(credentials);
             reddit.authenticate(data);
         } catch (OAuthException e) {
-           Logger.e(e, "Could not authenticate");
+            Logger.e(e, "Could not authenticate");
         }
     }
+
     public static boolean isAuthorized() {
-        RedditClient reddit = AuthenticationManager.get().getRedditClient();
         return reddit.isAuthenticated() && reddit.hasActiveUserContext();
     }
 
@@ -50,7 +55,6 @@ public class RedditApi {
         String clientSecret = BuildConfig.REDDIT_SCRIPT_CLIENT_SECRET;
 
         Credentials credentials = Credentials.script(username, password, clientId, clientSecret);
-        RedditClient reddit = AuthenticationManager.get().getRedditClient();
         try {
             OAuthData data = reddit.getOAuthHelper().easyAuth(credentials);
             reddit.authenticate(data);
@@ -65,8 +69,6 @@ public class RedditApi {
      * fetch subreddits
      */
     public static List<Subreddit> fetchSubreddits() {
-        RedditClient reddit = AuthenticationManager.get().getRedditClient();
-
         UserSubredditsPaginator paginator = new UserSubredditsPaginator(reddit, "subscriber");
         List<Subreddit> latestSubreddits = new ArrayList<>();
         while (paginator.hasNext()) {
@@ -79,7 +81,7 @@ public class RedditApi {
         }
 
         // sorting
-        if(!latestSubreddits.isEmpty()) {
+        if (!latestSubreddits.isEmpty()) {
             Collections.sort(latestSubreddits, new Comparator<Subreddit>() {
                 @Override
                 public int compare(Subreddit o1, Subreddit o2) {
@@ -88,7 +90,7 @@ public class RedditApi {
             });
         }
 
-       return latestSubreddits;
+        return latestSubreddits;
     }
 
 
@@ -96,7 +98,6 @@ public class RedditApi {
      * fetch subreddit's submissions
      */
     public static List<Submission> fetchSubmissions(String subreddit, Sorting sorting) {
-        RedditClient reddit = AuthenticationManager.get().getRedditClient();
         SubredditPaginator paginator = new SubredditPaginator(reddit, subreddit);
         paginator.setSorting(sorting);
         List<Submission> latestSubmissions = new ArrayList<>();
@@ -112,4 +113,35 @@ public class RedditApi {
         return latestSubmissions;
     }
 
+    public static LoggedInAccount account() {
+        return reddit.me();
+    }
+
+    public static Submission vote(Submission submission, VoteDirection voteDirection) throws ApiException {
+        new AccountManager(reddit).vote(submission, voteDirection);
+        return reddit.getSubmission(submission.getId());
+
+    }
+
+    public static CommentNode comments(String submissionId) {
+        return reddit.getSubmission(submissionId).getComments();
+    }
+
+    public static String replyComment(String submissionId, String replyText)  {
+        Submission submission = reddit.getSubmission(submissionId);
+        try {
+            return new AccountManager(reddit).reply(submission, replyText);
+        } catch (ApiException e) {
+            return e.getMessage();
+        }
+    }
+
+
+    public static void moreComments(CommentNode node) {
+        node.loadMoreComments(reddit);
+    }
+
+    public static void loadFully(CommentNode node) {
+        node.loadFully(reddit);
+    }
 }

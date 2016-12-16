@@ -6,7 +6,6 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.KeyEvent;
@@ -16,8 +15,9 @@ import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.abby.redditgo.MainApplication;
+import com.abby.redditgo.BaseActivity;
 import com.abby.redditgo.R;
+import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.event.SigninEvent;
 import com.abby.redditgo.job.SigninJob;
 import com.abby.redditgo.network.RedditApi;
@@ -25,6 +25,7 @@ import com.birbit.android.jobqueue.JobManager;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import javax.inject.Inject;
 
@@ -35,32 +36,29 @@ import butterknife.OnClick;
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends BaseActivity {
 
     @Inject
     JobManager mJobManager;
 
     // UI references.
-    @BindView(R.id.email)
+    @BindView(R.id.username)
     AutoCompleteTextView mEmailView;
     @BindView(R.id.password)
     EditText mPasswordView;
-    @BindView(R.id.login_form)
-    View mProgressView;
     @BindView(R.id.login_progress)
+    View mProgressView;
+    @BindView(R.id.login_form)
     View mLoginFormView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        ((MainApplication) getApplication()).getComponent().inject(this);
         ButterKnife.bind(this);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        ActionBar ab = getSupportActionBar();
-        ab.setDisplayHomeAsUpEnabled(true);
+        mEmailView.setText("e07skim");
+        mPasswordView.setText("eskim3164");
 
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -73,6 +71,23 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar ab = getSupportActionBar();
+        ab.setDisplayHomeAsUpEnabled(true);
+
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+
+    }
+
+    @Override
+    protected void injectActivity(ApplicationComponent component) {
+        component.inject(this);
     }
 
     @OnClick(R.id.email_sign_in_button)
@@ -142,7 +157,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private boolean isEmailValid(String email) {
         //TODO: Replace this with your own logic
-        return email.contains("@");
+        return true || email.contains("@");
     }
 
     private boolean isPasswordValid(String password) {
@@ -161,7 +176,7 @@ public class LoginActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
             int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
 
-            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+            mLoginFormView.setVisibility(!show ? View.GONE : View.VISIBLE);
             mLoginFormView.animate().setDuration(shortAnimTime).alpha(
                     show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
                 @Override
@@ -170,7 +185,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
             });
 
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mProgressView.setVisibility(!show ? View.VISIBLE : View.GONE);
             mProgressView.animate().setDuration(shortAnimTime).alpha(
                     show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
                 @Override
@@ -186,7 +201,7 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    @Subscribe
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSigninEvent(SigninEvent event) {
         showProgress(false);
         if (RedditApi.isAuthorized()) {

@@ -17,26 +17,17 @@
 
         <activity
             android:name=".ui.MainActivity"
-            android:label="@string/title_activity_main"
-            android:theme="@style/AppTheme.OverlapSystemBar">
+            android:label="@string/title_activity_main">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".ui.DetailActivity"
-            android:parentActivityName=".ui.MainActivity"
-            android:theme="@style/AppTheme.OverlapSystemBar">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".ui.MainActivity" />
-        </activity>
-
+        <activity android:name=".ui.DetailActivity" />
         <activity
             android:name=".ui.LoginActivity"
-            android:label="@string/title_activity_login"/>
+            android:label="@string/title_activity_login" />
 
         <service
             android:name=".services.MyJobService"
@@ -50,7 +41,7 @@
             </intent-filter>
         </service>
 
-
+        <activity android:name=".ui.CommentActivity"></activity>
     </application>
 
 </manifest>

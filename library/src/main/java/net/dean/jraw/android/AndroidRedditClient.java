@@ -18,8 +18,8 @@ import net.dean.jraw.http.oauth.InvalidScopeException;
  */
 public class AndroidRedditClient extends RedditClient {
     private static final String KEY_USER_AGENT_OVERRIDE = "net.dean.jraw.USER_AGENT_OVERRIDE";
-    private static final String KEY_REDDIT_USERNAME = "net.dean.jraw.REDDIT_USERNAME";
-    private static final String PLATFORM = "android";
+    private static final String KEY_REDDIT_USERNAME =     "net.dean.jraw.REDDIT_USERNAME";
+    private static final String PLATFORM =                "android";
 
     private static UserAgent getUserAgent(Context context) {
         try {
@@ -49,15 +49,15 @@ public class AndroidRedditClient extends RedditClient {
     /**
      * Attempts construct a RedditClient by resolving a {@link UserAgent} from a given Context. In order to be
      * successful, then one of two parameters must be specified in the AndroidManifest.xml file.
-     * <p>
+     *
      * <p>For ease of use, include a &lt;meta-data&gt; tag with the key {@value #KEY_REDDIT_USERNAME}, the value being
      * the developer's reddit username. The package name and build version will be determined programmatically through
      * the given Context.
-     * <p>
+     *
      * <p>If the developer wishes to specify a UserAgent against the recommended formula, they must include a
      * &lt;meta-data&gt; tag with the key {@value #KEY_USER_AGENT_OVERRIDE}, the value being the String to be passed to
      * {@link UserAgent#of(String)}.
-     * <p>
+     *
      * <p>If neither of these options are appealing, one may use the traditional constructor:
      * {@link #AndroidRedditClient(UserAgent)}.
      *
@@ -67,9 +67,7 @@ public class AndroidRedditClient extends RedditClient {
         this(getUserAgent(context));
     }
 
-    /**
-     * Traditional RedditClient constructor
-     */
+    /** Traditional RedditClient constructor */
     public AndroidRedditClient(UserAgent userAgent) {
         super(userAgent);
     }

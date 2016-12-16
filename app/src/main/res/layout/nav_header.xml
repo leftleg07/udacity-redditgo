@@ -34,16 +34,16 @@
             android:layout_width="120dp"
             android:layout_columnSpan="1"
             android:layout_rowSpan="2"
-            android:padding="4dp"
+            android:padding="8dp"
             android:scaleType="centerInside"
             android:src="@drawable/img_profile" />
 
         <TextView
-            android:layout_height="88dp"
+            android:id="@+id/text_username"
+            android:layout_height="94dp"
             android:layout_gravity="fill_horizontal"
-            android:background="#00ff00"
-            android:text="2" />
-
+            android:gravity="center"
+            android:textSize="22sp" />
 
         <FrameLayout
             android:layout_gravity="fill"
@@ -52,7 +52,7 @@
             <Button
                 android:id="@+id/button_login"
                 android:layout_width="80dp"
-                android:layout_height="60dp"
+                android:layout_height="40dp"
                 android:layout_gravity="center"
                 android:text="log in" />
 

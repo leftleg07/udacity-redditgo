@@ -3,29 +3,36 @@ package com.abby.redditgo.job;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.abby.redditgo.event.SubredditEvent;
+import com.abby.redditgo.event.AccountEvent;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.Job;
 import com.birbit.android.jobqueue.Params;
 import com.birbit.android.jobqueue.RetryConstraint;
 
-import net.dean.jraw.models.Subreddit;
+import net.dean.jraw.models.LoggedInAccount;
 
 import org.greenrobot.eventbus.EventBus;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
  * Created by gsshop on 2016. 10. 31..
  */
 
-public class FetchSubredditJob extends Job {
+public class AccountJob extends Job {
 
-    public FetchSubredditJob() {
+
+    public AccountJob() {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
         super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()));
+    }
+
+    @Override
+    public void onRun() throws Throwable {
+        LoggedInAccount account = RedditApi.account();
+        EventBus.getDefault().post(new AccountEvent(account));
+
     }
 
     @Override
@@ -41,17 +48,6 @@ public class FetchSubredditJob extends Job {
     @Override
     protected RetryConstraint shouldReRunOnThrowable(@NonNull Throwable throwable, int runCount, int maxRunCount) {
         return null;
-    }
-
-
-    @Override
-    public void onRun() throws Throwable {
-
-        if (RedditApi.isAuthorized()) {
-            List<Subreddit> subreddits = RedditApi.fetchSubreddits();
-            EventBus.getDefault().post(new SubredditEvent(subreddits));
-        }
-
     }
 
 }

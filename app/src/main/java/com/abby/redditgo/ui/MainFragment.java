@@ -18,12 +18,16 @@ import android.view.ViewGroup;
 
 import com.abby.redditgo.R;
 import com.abby.redditgo.event.SubmissionEvent;
+import com.abby.redditgo.event.VoteEvent;
 
+import net.dean.jraw.models.Submission;
 import net.dean.jraw.paginators.Sorting;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -59,7 +63,7 @@ public class MainFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if(savedInstanceState != null) {
+        if (savedInstanceState != null) {
             mPosition = savedInstanceState.getInt(KEY_POSITION);
         }
         ButterKnife.bind(this, view);
@@ -74,7 +78,8 @@ public class MainFragment extends Fragment {
         mRecyclerView.setLayoutManager(mLayoutManager);
 
         // specify an adapter (see also next example)
-        mRecyclerView.setAdapter(new MyAdapter(getContext()));
+        SubmissionAdapter adapter = new SubmissionAdapter(getContext());
+        mRecyclerView.setAdapter(adapter);
 
         /*
         * Sets up a SwipeRefreshLayout.OnRefreshListener that is invoked when the user
@@ -156,10 +161,10 @@ public class MainFragment extends Fragment {
         super.onSaveInstanceState(outState);
         int position = mLayoutManager.findFirstVisibleItemPosition();
         int compelete = mLayoutManager.findFirstCompletelyVisibleItemPosition();
-        if(compelete > 0) {
+        if (compelete > 0) {
             position = compelete;
         }
-        if(position < 0) {
+        if (position < 0) {
             position = mPosition;
         }
         outState.putInt(KEY_POSITION, position);
@@ -179,19 +184,32 @@ public class MainFragment extends Fragment {
             mLastFilterId = R.id.menu_top;
         }
 
-        MyAdapter adapter = (MyAdapter) mRecyclerView.getAdapter();
+        SubmissionAdapter adapter = (SubmissionAdapter) mRecyclerView.getAdapter();
         if (event.mPage == 1) {
             mRecyclerView.scrollToPosition(0);
-            adapter.setDataset(event.submissions);
+            adapter.setSubmissions(event.submissions);
         } else {
-            adapter.addAllDataset(event.submissions);
+            adapter.addSubmissions(event.submissions);
         }
 
         mRecyclerView.getAdapter().notifyDataSetChanged();
 
-        if(mPosition > 0 && mPosition < adapter.getItemCount() ) {
+        if (mPosition > 0 && mPosition < adapter.getItemCount()) {
             mRecyclerView.scrollToPosition(mPosition);
             mPosition = 0;
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onVoteEvent(VoteEvent event) {
+        SubmissionAdapter adapter = (SubmissionAdapter) mRecyclerView.getAdapter();
+        List<Submission> submissions = adapter.getSubmissions();
+        for (int i = 0; i < submissions.size(); i++) {
+            if (submissions.get(i).getId().equals(event.submission.getId())) {
+                submissions.set(i, event.submission);
+                adapter.notifyItemChanged(i);
+                break;
+            }
         }
 
     }

@@ -32,7 +32,7 @@ import static net.dean.jraw.auth.AuthenticationState.NONE;
  * Created by gsshop on 2016. 11. 1..
  */
 
-public class FetchSubmissionJob extends BaseJob {
+public class SubmissionFetchJob extends BaseJob {
     private final String mSubreddit;
     private final Sorting mSorting;
 
@@ -44,7 +44,7 @@ public class FetchSubmissionJob extends BaseJob {
      * @param subreddit
      * @param sorting
      */
-    public FetchSubmissionJob(String subreddit, Sorting sorting) {
+    public SubmissionFetchJob(String subreddit, Sorting sorting) {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
         super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()).addTags(JobId.FETCH_SUBMISSION_ID));

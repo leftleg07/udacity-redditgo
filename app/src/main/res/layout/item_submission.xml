@@ -31,7 +31,7 @@
         <!--image-->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="300dp"
+            android:layout_height="320dp"
             android:layout_columnSpan="7">
 
             <ImageView
@@ -49,9 +49,11 @@
 
         <!--footer-->
         <ImageButton
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:background="@android:color/transparent"
+            android:id="@+id/button_up"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_up" />
 
@@ -60,9 +62,11 @@
             android:layout_gravity="center_vertical" />
 
         <ImageButton
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:background="@android:color/transparent"
+            android:id="@+id/button_down"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
             android:src="@drawable/ic_down" />
 
@@ -70,9 +74,11 @@
 
 
         <ImageButton
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:background="@android:color/transparent"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:id="@+id/button_comment"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
             android:src="@drawable/ic_comment_black_24dp" />
 
@@ -83,9 +89,10 @@
 
         <ImageButton
             android:id="@+id/button_share"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:background="@android:color/transparent"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
             android:src="@drawable/ic_share_black_24dp" />
 

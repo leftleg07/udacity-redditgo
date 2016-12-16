@@ -9,9 +9,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.abby.redditgo.R;
 import com.bumptech.glide.Glide;
+
+import net.dean.jraw.models.Submission;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -25,15 +28,18 @@ import butterknife.OnClick;
 public class ImageDialogFragment extends DialogFragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_IMAGE_URL_PARAM = "_arg_image_url_param";
-    private static final String DEBUG_TAG = "BBBB";
+    private static final String ARG_PARAM_TITLE = "_arg_param_title";
+    private static final String ARG_PARAM_IMAGE_URL = "_arg_param_image_url";
 
     // TODO: Rename and change types of parameters
     private String mImageUrl;
-
+    private String mTitle;
 
     @BindView(R.id.image)
     ImageView mImageView;
+
+    @BindView(R.id.textView_title)
+    TextView mTitleText;
 
     public ImageDialogFragment() {
         // Required empty public constructor
@@ -43,14 +49,15 @@ public class ImageDialogFragment extends DialogFragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param url Parameter 1.
+     * @param submission Parameter 1.
      * @return A new instance of fragment ImageDialogFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static ImageDialogFragment newInstance(String url) {
+    public static ImageDialogFragment newInstance(Submission submission) {
         ImageDialogFragment fragment = new ImageDialogFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_IMAGE_URL_PARAM, url);
+        args.putString(ARG_PARAM_TITLE, submission.getTitle());
+        args.putString(ARG_PARAM_IMAGE_URL, submission.getUrl());
         fragment.setArguments(args);
         return fragment;
     }
@@ -61,7 +68,8 @@ public class ImageDialogFragment extends DialogFragment {
         //팝업 외부영역 반투명 설정
         setStyle(DialogFragment.STYLE_NORMAL, android.R.style.Theme_Translucent_NoTitleBar);
         if (getArguments() != null) {
-            mImageUrl = getArguments().getString(ARG_IMAGE_URL_PARAM);
+            mTitle = getArguments().getString(ARG_PARAM_TITLE);
+            mImageUrl = getArguments().getString(ARG_PARAM_IMAGE_URL);
         }
 
 
@@ -80,6 +88,7 @@ public class ImageDialogFragment extends DialogFragment {
         super.onViewCreated(view, savedInstanceState);
         ButterKnife.bind(this, view);
 
+        mTitleText.setText(mTitle);
         Glide.with(getContext()).load(mImageUrl).placeholder(R.drawable.img_no).into(mImageView);
 
     }

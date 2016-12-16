@@ -4,14 +4,17 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
 import com.abby.redditgo.MockApplication;
+import com.abby.redditgo.event.CommentEvent;
 import com.abby.redditgo.event.SubmissionEvent;
 import com.abby.redditgo.event.SubredditEvent;
-import com.abby.redditgo.job.FetchSubmissionJob;
-import com.abby.redditgo.job.FetchSubredditJob;
+import com.abby.redditgo.job.CommentFetchJob;
 import com.abby.redditgo.job.JobId;
+import com.abby.redditgo.job.SubmissionFetchJob;
+import com.abby.redditgo.job.SubredditFetchJob;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.JobManager;
 import com.birbit.android.jobqueue.TagConstraint;
+import com.google.common.truth.Truth;
 import com.orhanobut.logger.Logger;
 
 import net.dean.jraw.auth.AuthenticationManager;
@@ -41,7 +44,7 @@ import static net.dean.jraw.auth.AuthenticationState.READY;
  */
 @RunWith(AndroidJUnit4.class)
 public class RedditApiTest {
-    private CountDownLatch signal;
+    private CountDownLatch mSignal;
 
     @Inject
     JobManager mJobManager;
@@ -54,12 +57,12 @@ public class RedditApiTest {
         MockApplication application = (MockApplication) InstrumentationRegistry.getTargetContext().getApplicationContext();
         application.getMockComponent().inject(this);
         EventBus.getDefault().register(this);
-        signal = new CountDownLatch(1);
+        mSignal = new CountDownLatch(1);
     }
 
     @After
     public void tearDown() throws Exception {
-        signal.countDown();
+        mSignal.countDown();
         EventBus.getDefault().unregister(this);
 
     }
@@ -85,8 +88,8 @@ public class RedditApiTest {
             login();
         }
 
-        mJobManager.addJobInBackground(new FetchSubredditJob());
-        signal.await();
+        mJobManager.addJobInBackground(new SubredditFetchJob());
+        mSignal.await();
     }
 
     @Subscribe
@@ -94,7 +97,7 @@ public class RedditApiTest {
         for(Subreddit subreddit: event.subreddits) {
             Logger.i(subreddit.getDisplayName());
         }
-        signal.countDown();
+        mSignal.countDown();
     }
 
     @Test
@@ -103,8 +106,8 @@ public class RedditApiTest {
         if(state == NONE) {
             RedditApi.anonymous(mDeviceId);
         }
-        mJobManager.addJobInBackground(new FetchSubmissionJob(null, Sorting.HOT));
-        signal.await();
+        mJobManager.addJobInBackground(new SubmissionFetchJob(null, Sorting.HOT));
+        mSignal.await();
 
     }
 
@@ -114,7 +117,7 @@ public class RedditApiTest {
         for(Submission submission: event.submissions) {
             Logger.i(submission.getTitle());
         }
-        signal.countDown();
+        mSignal.countDown();
     }
 
     @Test
@@ -123,8 +126,25 @@ public class RedditApiTest {
         if(state == NONE) {
             RedditApi.anonymous(mDeviceId);
         }
-        mJobManager.addJobInBackground(new FetchSubmissionJob("all", Sorting.HOT));
-        signal.await();
+        mJobManager.addJobInBackground(new SubmissionFetchJob("all", Sorting.HOT));
+        mSignal.await();
 
+    }
+
+
+    @Test
+    public void testFetchComment() throws Exception {
+        AuthenticationState state = AuthenticationManager.get().checkAuthState();
+        if(state == NONE) {
+            RedditApi.anonymous(mDeviceId);
+        }
+        String submissionId="5ilkvt";
+        mJobManager.addJobInBackground(new CommentFetchJob(submissionId));
+        mSignal.await();
+    }
+
+    @Subscribe
+    public void onCommentEvent(CommentEvent event) {
+        Truth.assertThat(event.node.getTotalSize() > 0);
     }
 }

@@ -38,6 +38,8 @@ android {
     packagingOptions {
         exclude 'META-INF/NOTICE'
         exclude 'META-INF/LICENSE'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/notice.txt'
     }
     configurations {
         androidTestCompile.exclude group: 'com.android.support', module: 'support-annotations'
@@ -53,6 +55,7 @@ repositories {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':library')
+    compile project(':multilevelexpindlistview')
 
     // App's dependencies, including test
     compile 'com.android.support:appcompat-v7:24.+'
@@ -61,7 +64,7 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:24.+'
     compile 'com.android.support:support-v4:24.+'
     compile 'com.android.support:cardview-v7:24.+'
-    compile 'com.google.guava:guava:19.0'
+    compile 'com.google.guava:guava:20.0'
 
 
     compile 'com.facebook.stetho:stetho:1.4.1'
@@ -101,13 +104,19 @@ dependencies {
     // multi dex
     compile 'com.android.support:multidex:1.+'
 
+    compile 'org.springframework.android:spring-android-rest-template:2.0.0.M3'
+
     // photoview
     compile 'com.github.chrisbanes:PhotoView:1.3.1'
+
+    compile 'com.afollestad.material-dialogs:core:0.9.1.0'
 
     // Testing-only dependencies
     testCompile 'junit:junit:4.12'
     testCompile 'org.testng:testng:6.9.10'
     testCompile 'net.sourceforge.htmlunit:htmlunit:2.19'
+
+    androidTestApt 'com.google.dagger:dagger-compiler:2.+'
 
     // Android JUnit Runner
     androidTestCompile 'com.android.support.test:runner:0.5'
@@ -123,5 +132,5 @@ dependencies {
 
     androidTestCompile 'com.google.truth:truth:0.29'
 
-    androidTestApt 'com.google.dagger:dagger-compiler:2.+'
+
 }
