@@ -6,15 +6,21 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.abby.redditgo.MainApplication;
 import com.abby.redditgo.R;
+import com.abby.redditgo.job.CommentReplyJob;
 import com.abby.redditgo.model.MyComment;
 import com.abby.redditgo.model.MyContent;
+import com.birbit.android.jobqueue.JobManager;
 import com.oissela.software.multilevelexpindlistview.MultiLevelExpIndListAdapter;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import javax.inject.Inject;
 
 import butterknife.BindDimen;
 import butterknife.BindView;
@@ -38,6 +44,9 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
 
     private final Context mContext;
 
+    @Inject
+    JobManager mJobManager;
+
     static class CommentViewHolder extends RecyclerView.ViewHolder {
 
         @BindView(R.id.textView_author)
@@ -57,6 +66,15 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
 
         @BindDimen(R.dimen.comment_space)
         int space;
+
+        @BindView(R.id.button_up)
+        ImageButton upButton;
+
+        @BindView(R.id.button_down)
+        ImageButton downButton;
+
+        @BindView(R.id.button_reply)
+        ImageButton replyButton;
 
         public CommentViewHolder(View itemView) {
             super(itemView);
@@ -81,6 +99,7 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
     public CommentAdapter(Context context) {
         super();
         mContext = context;
+        MainApplication.getInstance().getComponent().inject(this);
     }
 
     @Override
@@ -111,15 +130,15 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
         switch (viewType) {
             case VIEW_TYPE_ITEM:
                 CommentViewHolder cvh = (CommentViewHolder) viewHolder;
-                MyComment comment = (MyComment) getItemAt(position);
+                final MyComment comment = (MyComment) getItemAt(position);
 
-                cvh.authorTextView.setText(comment.submission.getAuthor());
-                cvh.commentTextView.setText(comment.submission.getBody());
+                cvh.authorTextView.setText(comment.comment.getAuthor());
+                cvh.commentTextView.setText(comment.comment.getBody());
 
-                cvh.scoreText.setText(String.valueOf(comment.submission.getScore()) + " score");
+                cvh.scoreText.setText(String.valueOf(comment.comment.getScore()) + " score");
 
-                Date createdDate = comment.submission.getCreated();
-                Date editDate = comment.submission.getEditDate();
+                Date createdDate = comment.comment.getCreated();
+                Date editDate = comment.comment.getEditDate();
 
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
@@ -138,6 +157,14 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
                 } else {
                     cvh.openCheck.setChecked(true);
                 }
+
+                cvh.replyButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mJobManager.addJobInBackground(new CommentReplyJob(comment.comment.getId(), "Bugaboo Boxer and the new luggage changing the way we travel"));
+                    }
+                });
+
                 break;
             case VIEW_TYPE_CONTENT:
                 ContentViewHolder contentVH = (ContentViewHolder) viewHolder;

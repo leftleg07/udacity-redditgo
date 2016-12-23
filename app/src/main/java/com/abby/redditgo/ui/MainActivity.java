@@ -143,7 +143,7 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
     protected void onDestroy() {
         super.onDestroy();
         EventBus.getDefault().unregister(this);
-        mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.FETCH_SUBMISSION_ID);
+        mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.SUBMISSION_FETCH_ID);
     }
 
     @Override
@@ -190,7 +190,7 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
     public void fetchSubmission(String subreddit, Sorting sorting) {
         lastSubreddit = subreddit;
         lastSorting = sorting;
-        mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.FETCH_SUBMISSION_ID);
+        mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.SUBMISSION_FETCH_ID);
         mJobManager.addJobInBackground(new SubmissionFetchJob(subreddit, sorting));
     }
 

@@ -4,6 +4,7 @@ import com.abby.redditgo.job.SubmissionFetchJob;
 import com.abby.redditgo.services.MyGcmJobService;
 import com.abby.redditgo.services.MyJobService;
 import com.abby.redditgo.ui.CommentActivity;
+import com.abby.redditgo.ui.CommentAdapter;
 import com.abby.redditgo.ui.LoginActivity;
 import com.abby.redditgo.ui.MainActivity;
 import com.abby.redditgo.ui.SubmissionAdapter;
@@ -25,4 +26,5 @@ public interface ApplicationComponent {
     void inject(SubmissionFetchJob fetchSubmission);
     void inject(SubmissionAdapter adapter);
     void inject(CommentActivity commentActivity);
+    void inject(CommentAdapter commentAdapter);
 }

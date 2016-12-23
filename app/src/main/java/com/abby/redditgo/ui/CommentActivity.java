@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -18,12 +19,13 @@ import com.abby.redditgo.event.CommentEvent;
 import com.abby.redditgo.event.CommentReplyEvent;
 import com.abby.redditgo.job.CommentFetchJob;
 import com.abby.redditgo.job.CommentReplyJob;
+import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.model.MyComment;
 import com.abby.redditgo.model.MyContent;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.JobManager;
+import com.birbit.android.jobqueue.TagConstraint;
 
-import net.dean.jraw.models.Comment;
 import net.dean.jraw.models.CommentNode;
 
 import org.greenrobot.eventbus.EventBus;
@@ -41,6 +43,7 @@ import butterknife.OnClick;
 public class CommentActivity extends BaseActivity {
 
     public static final String EXTRA_SUBMISSION_ID = "_extra_submission_id";
+
     @Inject
     JobManager mJobManager;
 
@@ -49,6 +52,9 @@ public class CommentActivity extends BaseActivity {
 
     @BindView(R.id.fab)
     FloatingActionButton mFAB;
+
+    @BindView(R.id.swiperefresh)
+    SwipeRefreshLayout mSwipeRefreshLayout;
 
     private CommentAdapter mAdapter;
     private LinearLayoutManager mLayoutManager;
@@ -90,6 +96,21 @@ public class CommentActivity extends BaseActivity {
         mAdapter = new CommentAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
 
+        /*
+        * Sets up a SwipeRefreshLayout.OnRefreshListener that is invoked when the user
+        * performs a swipe-to-refresh gesture.
+        */
+        mSwipeRefreshLayout.setOnRefreshListener(
+                new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        // This method performs the actual data-refresh operation.
+                        // The method calls setRefreshing(false) when it's finished.
+                        updateOperation();
+                    }
+                }
+        );
+
     }
 
     private MyContent getDummyContent() {
@@ -114,40 +135,39 @@ public class CommentActivity extends BaseActivity {
     }
 
 
-
     @Subscribe
     public void onCommentEvent(CommentEvent event) {
         comments = new ArrayList<MyComment>();
-        CommentNode node = event.node;
+        for (CommentNode node : event.nodes) {
+            MyComment comment = new MyComment(node.getComment(), node.getDepth());
+            comments.add(comment);
+            makeComments(node, (List<MyComment>) comment.getChildren());
+        }
 
-        makeComments(node, comments);
-
-        MyContent content = getDummyContent();
-        mAdapter.clear();
-        mAdapter.add(content);
+        if (event.index == 0) {
+            mAdapter.clear();
+            MyContent content = getDummyContent();
+            mAdapter.add(content);
+        }
         mAdapter.addAll(comments);
         mAdapter.notifyDataSetChanged();
-//        mJobManager.addJobInBackground(new CommentMoreJob(node));
-
     }
 
+
     private void makeComments(CommentNode node, List<MyComment> subComments) {
-        for (CommentNode child : node.getChildren()) {
-            Comment comment = child.getComment();
+        for (CommentNode childNode : node.getChildren()) {
 
-            MyComment myComment = new MyComment(comment, child.getDepth());
-            if (child.getDepth() > 1) {
-                this.comments.add(myComment);
-            }
-            subComments.add(myComment);
+            MyComment comment = new MyComment(childNode.getComment(), childNode.getDepth());
+            this.comments.add(comment);
+            subComments.add(comment);
 
-            makeComments(child, (List<MyComment>) myComment.getChildren());
+            makeComments(childNode, (List<MyComment>) comment.getChildren());
         }
     }
 
     @OnClick(R.id.fab)
     public void onFABClick(View view) {
-        if(RedditApi.isAuthorized()) {
+        if (RedditApi.isAuthorized()) {
             mJobManager.addJobInBackground(new CommentReplyJob(submissionId, "Chris Farley was a comedy genius. Such a shame that he left us too early."));
         } else {
             Snackbar.make(mFAB, "Please sign in to do that.", Snackbar.LENGTH_LONG)
@@ -162,11 +182,17 @@ public class CommentActivity extends BaseActivity {
 
     @Subscribe
     public void onCommentReplyEvent(CommentReplyEvent event) {
-        if(event.newCommentId != null) {
+        if (event.newCommentId != null) {
             mJobManager.addJobInBackground(new CommentFetchJob(submissionId));
         } else {
             Snackbar.make(mFAB, event.errorMessage, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
         }
+    }
+
+    private void updateOperation() {
+        mSwipeRefreshLayout.setRefreshing(false);
+        mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.COMMENT_FETCH_ID);
+        mJobManager.addJobInBackground(new CommentFetchJob(submissionId));
     }
 }

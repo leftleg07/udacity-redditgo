@@ -5,7 +5,8 @@ package com.abby.redditgo.job;
  */
 
 public class JobId {
-    public static final String FETCH_SUBREDDIT_ID = "fetch-subreddit";
-    public static final String FETCH_SUBMISSION_ID = "fetch-submission";
+    public static final String SUBREDDIT_FETCH_ID = "subreddit-fetch";
+    public static final String SUBMISSION_FETCH_ID = "comment-fetch";
+    public static final String COMMENT_FETCH_ID = "comment-fetch";
 
 }

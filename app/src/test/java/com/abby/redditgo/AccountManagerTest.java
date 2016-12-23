@@ -138,7 +138,7 @@ public class AccountManagerTest extends RedditTest {
             String replyText = "" + epochMillis();
             Submission submission = reddit.getSubmission(SUBMISSION_ID);
 
-            // Reply to a submission
+            // Reply to a comment
             this.newCommentId = account.reply(submission, replyText);
             // Since only the ID is returned, test the fullname
             assertTrue(JrawUtils.isFullname("t1_" + newCommentId));
@@ -197,7 +197,7 @@ public class AccountManagerTest extends RedditTest {
             reddit.getSubmission(newSubmssionId);
         } catch (NetworkException e) {
             if (e.getResponse().getStatusCode() != 404) {
-                fail("Did not get a 404 when querying the deleted submission", e);
+                fail("Did not get a 404 when querying the deleted comment", e);
             }
         }
     }
@@ -246,7 +246,7 @@ public class AccountManagerTest extends RedditTest {
                 }
             }
 
-            fail("Did not find saved submission");
+            fail("Did not find saved comment");
 
         } catch (NetworkException | ApiException e) {
             handle(e);
@@ -262,10 +262,10 @@ public class AccountManagerTest extends RedditTest {
             UserContributionPaginator paginator = getPaginator("saved");
             List<Contribution> saved = paginator.next();
 
-            // Fail if we find the submission in the list
+            // Fail if we find the comment in the list
             for (Contribution s : saved) {
                 if (s.getId().equals(submission.getId())) {
-                    fail("Found the submission after it was unsaved");
+                    fail("Found the comment after it was unsaved");
                 }
             }
         } catch (NetworkException | ApiException e) {
@@ -289,7 +289,7 @@ public class AccountManagerTest extends RedditTest {
                 }
             }
 
-            fail("Did not find the submission in the hidden posts");
+            fail("Did not find the comment in the hidden posts");
         } catch (NetworkException | ApiException e) {
             handle(e);
         }
@@ -307,7 +307,7 @@ public class AccountManagerTest extends RedditTest {
             for (Contribution c : hidden) {
                 Submission s = (Submission) c;
                 if (s.getId().equals(submission.getId())) {
-                    fail("Found unhidden submission in hidden posts");
+                    fail("Found unhidden comment in hidden posts");
                 }
             }
         } catch (NetworkException | ApiException e) {
@@ -323,7 +323,7 @@ public class AccountManagerTest extends RedditTest {
 
             moderation.setNsfw(s, newVal);
 
-            // Reload the submission's data
+            // Reload the comment's data
             s = reddit.getSubmission(s.getId());
             assertTrue(s.isNsfw() == newVal);
         } catch (NetworkException | ApiException e) {

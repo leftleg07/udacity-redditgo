@@ -47,7 +47,7 @@ public class SubmissionFetchJob extends BaseJob {
     public SubmissionFetchJob(String subreddit, Sorting sorting) {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
-        super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()).addTags(JobId.FETCH_SUBMISSION_ID));
+        super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()).addTags(JobId.SUBMISSION_FETCH_ID));
         this.mSubreddit = subreddit;
         this.mSorting = sorting;
     }

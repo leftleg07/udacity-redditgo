@@ -13,10 +13,10 @@ public class MyComment implements MultiLevelExpIndListAdapter.ExpIndData {
     private boolean mIsGroup;
     private int mGroupSize;
 
-    public Comment submission;
+    public Comment comment;
 
-    public MyComment(Comment submission, int indentation) {
-        this.submission = submission;
+    public MyComment(Comment comment, int indentation) {
+        this.comment = comment;
         this.mIndentation = indentation;
         mChildren = new ArrayList<MyComment>();
     }
