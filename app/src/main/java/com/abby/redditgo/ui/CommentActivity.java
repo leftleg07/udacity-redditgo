@@ -17,8 +17,9 @@ import com.abby.redditgo.R;
 import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.event.CommentEvent;
 import com.abby.redditgo.event.CommentReplyEvent;
+import com.abby.redditgo.event.AttemptLoginEvent;
 import com.abby.redditgo.job.CommentFetchJob;
-import com.abby.redditgo.job.CommentReplyJob;
+import com.abby.redditgo.job.CommentReplySubmissionJob;
 import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.model.MyComment;
 import com.abby.redditgo.model.MyContent;
@@ -168,7 +169,7 @@ public class CommentActivity extends BaseActivity {
     @OnClick(R.id.fab)
     public void onFABClick(View view) {
         if (RedditApi.isAuthorized()) {
-            mJobManager.addJobInBackground(new CommentReplyJob(submissionId, "Chris Farley was a comedy genius. Such a shame that he left us too early."));
+            mJobManager.addJobInBackground(new CommentReplySubmissionJob(submissionId, "Chris Farley was a comedy genius. Such a shame that he left us too early."));
         } else {
             Snackbar.make(mFAB, "Please sign in to do that.", Snackbar.LENGTH_LONG)
                     .setAction("Sign in", new View.OnClickListener() {
@@ -188,6 +189,17 @@ public class CommentActivity extends BaseActivity {
             Snackbar.make(mFAB, event.errorMessage, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
         }
+    }
+
+    @Subscribe
+    public void onAttemptLoginEvent(AttemptLoginEvent event) {
+        Snackbar.make(mFAB, "Please sign in to do that.", Snackbar.LENGTH_LONG)
+                .setAction("Sign in", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        ContextCompat.startActivity(CommentActivity.this, new Intent(CommentActivity.this, LoginActivity.class), null);
+                    }
+                }).show();
     }
 
     private void updateOperation() {

@@ -10,6 +10,7 @@ import net.dean.jraw.http.oauth.Credentials;
 import net.dean.jraw.http.oauth.OAuthData;
 import net.dean.jraw.http.oauth.OAuthException;
 import net.dean.jraw.managers.AccountManager;
+import net.dean.jraw.models.Comment;
 import net.dean.jraw.models.CommentNode;
 import net.dean.jraw.models.Listing;
 import net.dean.jraw.models.LoggedInAccount;
@@ -127,10 +128,19 @@ public class RedditApi {
         return reddit.getSubmission(submissionId).getComments();
     }
 
-    public static String replyComment(String submissionId, String replyText)  {
+    public static String replySubmission(String submissionId, String replyText) {
         Submission submission = reddit.getSubmission(submissionId);
         try {
             return new AccountManager(reddit).reply(submission, replyText);
+        } catch (ApiException e) {
+            return e.getMessage();
+        }
+    }
+
+
+    public static String replyComment(Comment replyTo, String replyText) {
+        try {
+            return new AccountManager(reddit).reply(replyTo, replyText);
         } catch (ApiException e) {
             return e.getMessage();
         }

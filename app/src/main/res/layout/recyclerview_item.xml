@@ -89,7 +89,7 @@
                 android:src="@drawable/ic_down" />
 
             <ImageButton
-                android:id="@+id/button_reply"
+                android:id="@+id/button_reply_comment"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:background="?attr/selectableItemBackgroundBorderless"

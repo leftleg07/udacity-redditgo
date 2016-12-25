@@ -9,6 +9,7 @@ import com.birbit.android.jobqueue.Job;
 import com.birbit.android.jobqueue.Params;
 import com.birbit.android.jobqueue.RetryConstraint;
 
+import net.dean.jraw.models.Comment;
 import net.dean.jraw.util.JrawUtils;
 
 import org.greenrobot.eventbus.EventBus;
@@ -18,22 +19,22 @@ import java.util.UUID;
 /**
  * Created by gsshop on 2016. 12. 7..
  */
-public class CommentReplyJob extends Job {
+public class CommentReplyCommentJob extends Job {
 
     private final String replyText;
-    private final String submissionId;
+    private final Comment replyTo;
 
-    public CommentReplyJob(String submissionId, String replyText) {
+    public CommentReplyCommentJob(Comment replyTo, String replyText) {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
         super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()));
-        this.submissionId=submissionId;
+        this.replyTo=replyTo;
         this.replyText = replyText;
     }
 
     @Override
     public void onRun() throws Throwable {
-        String newCommentId = RedditApi.replyComment(submissionId, replyText);
+        String newCommentId = RedditApi.replyComment(replyTo, replyText);
         if(JrawUtils.isFullname("t1_" + newCommentId)) {
             EventBus.getDefault().post(new CommentReplyEvent(newCommentId, null));
         } else {

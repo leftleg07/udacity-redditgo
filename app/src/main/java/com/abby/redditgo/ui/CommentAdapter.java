@@ -11,11 +11,15 @@ import android.widget.TextView;
 
 import com.abby.redditgo.MainApplication;
 import com.abby.redditgo.R;
-import com.abby.redditgo.job.CommentReplyJob;
+import com.abby.redditgo.event.AttemptLoginEvent;
+import com.abby.redditgo.job.CommentReplyCommentJob;
 import com.abby.redditgo.model.MyComment;
 import com.abby.redditgo.model.MyContent;
+import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.JobManager;
 import com.oissela.software.multilevelexpindlistview.MultiLevelExpIndListAdapter;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -73,7 +77,7 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
         @BindView(R.id.button_down)
         ImageButton downButton;
 
-        @BindView(R.id.button_reply)
+        @BindView(R.id.button_reply_comment)
         ImageButton replyButton;
 
         public CommentViewHolder(View itemView) {
@@ -161,7 +165,11 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
                 cvh.replyButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        mJobManager.addJobInBackground(new CommentReplyJob(comment.comment.getId(), "Bugaboo Boxer and the new luggage changing the way we travel"));
+                        if (RedditApi.isAuthorized()) {
+                            mJobManager.addJobInBackground(new CommentReplyCommentJob(comment.comment, "Bugaboo Boxer and the new luggage changing the way we travel"));
+                        } else {
+                            EventBus.getDefault().post(new AttemptLoginEvent());
+                        }
                     }
                 });
 
