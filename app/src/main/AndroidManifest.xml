@@ -16,7 +16,7 @@
             android:value="redditgo" />
 
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".ui.main.MainActivity"
             android:label="@string/title_activity_main">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,9 +24,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.DetailActivity" />
+        <activity android:name=".ui.detail.DetailActivity" />
         <activity
-            android:name=".ui.LoginActivity"
+            android:name=".ui.login.LoginActivity"
             android:label="@string/title_activity_login" />
 
         <service
@@ -41,7 +41,8 @@
             </intent-filter>
         </service>
 
-        <activity android:name=".ui.CommentActivity"></activity>
+        <activity android:name=".ui.comment.CommentActivity" />
+        <activity android:name=".ui.comment.CommentComposeActivity"></activity>
     </application>
 
 </manifest>

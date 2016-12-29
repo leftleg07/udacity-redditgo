@@ -1,4 +1,4 @@
-package com.abby.redditgo.ui;
+package com.abby.redditgo.ui.main;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.abby.redditgo.R;
+import com.abby.redditgo.event.SubmissionErrorEvent;
 import com.abby.redditgo.event.SubmissionEvent;
 import com.abby.redditgo.event.VoteEvent;
 
@@ -57,7 +58,14 @@ public class MainFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        EventBus.getDefault().register(this);
         return inflater.inflate(R.layout.fragment_main, container, false);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        EventBus.getDefault().unregister(this);
     }
 
     @Override
@@ -110,17 +118,6 @@ public class MainFragment extends Fragment {
         }
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        EventBus.getDefault().register(this);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        EventBus.getDefault().unregister(this);
-    }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -198,6 +195,11 @@ public class MainFragment extends Fragment {
             mRecyclerView.scrollToPosition(mPosition);
             mPosition = 0;
         }
+    }
+
+    public void onSubmissionErrorEvent(SubmissionErrorEvent event) {
+//        Snackbar.make(mFAB, event.errorMessage, Snackbar.LENGTH_LONG)
+//                .setAction("Action", null).show();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

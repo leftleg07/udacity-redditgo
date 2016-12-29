@@ -58,7 +58,7 @@
             android:src="@drawable/ic_up" />
 
         <TextView
-            android:id="@+id/textView_score"
+            android:id="@+id/textView_comment_score"
             android:layout_gravity="center_vertical" />
 
         <ImageButton

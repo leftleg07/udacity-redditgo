@@ -1,4 +1,4 @@
-package com.abby.redditgo.ui;
+package com.abby.redditgo.ui.login;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -15,7 +15,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.abby.redditgo.BaseActivity;
+import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.R;
 import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.event.SigninEvent;

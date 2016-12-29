@@ -1,4 +1,4 @@
-package com.abby.redditgo.ui;
+package com.abby.redditgo.ui.detail;
 
 import android.net.Uri;
 import android.os.Bundle;
@@ -6,7 +6,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
-import com.abby.redditgo.BaseActivity;
+import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.R;
 import com.abby.redditgo.di.ApplicationComponent;
 

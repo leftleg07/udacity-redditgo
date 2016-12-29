@@ -1,4 +1,4 @@
-package com.abby.redditgo.ui;
+package com.abby.redditgo.ui.main;
 
 import android.content.Context;
 import android.content.Intent;
@@ -15,10 +15,14 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.abby.redditgo.BaseActivity;
+import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.R;
-import com.abby.redditgo.job.VoteJob;
+import com.abby.redditgo.job.SubmissionVoteJob;
 import com.abby.redditgo.network.RedditApi;
+import com.abby.redditgo.ui.comment.CommentActivity;
+import com.abby.redditgo.ui.detail.DetailActivity;
+import com.abby.redditgo.ui.detail.ImageDialogFragment;
+import com.abby.redditgo.ui.login.LoginActivity;
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.birbit.android.jobqueue.JobManager;
@@ -43,7 +47,7 @@ import butterknife.ButterKnife;
 
 import static android.content.Intent.EXTRA_SUBJECT;
 import static android.content.Intent.EXTRA_TEXT;
-import static com.abby.redditgo.ui.CommentActivity.EXTRA_SUBMISSION_ID;
+import static com.abby.redditgo.ui.comment.CommentActivity.EXTRA_SUBMISSION_ID;
 
 public class SubmissionAdapter extends RecyclerView.Adapter<SubmissionAdapter.ViewHolder> {
     private List<Submission> mSubmissions;
@@ -76,7 +80,7 @@ public class SubmissionAdapter extends RecyclerView.Adapter<SubmissionAdapter.Vi
         @BindView(R.id.imageView_icon)
         ImageView mIconImage;
 
-        @BindView(R.id.textView_score)
+        @BindView(R.id.textView_comment_score)
         TextView mScoreText;
 
         @BindView(R.id.textView_comments)
@@ -177,9 +181,9 @@ public class SubmissionAdapter extends RecyclerView.Adapter<SubmissionAdapter.Vi
             public void onClick(View v) {
                 if (RedditApi.isAuthorized()) {
                     if (submission.getVote() == VoteDirection.UPVOTE) {
-                        mJobManager.addJobInBackground(new VoteJob(submission, VoteDirection.NO_VOTE));
+                        mJobManager.addJobInBackground(new SubmissionVoteJob(submission, VoteDirection.NO_VOTE));
                     } else {
-                        mJobManager.addJobInBackground(new VoteJob(submission, VoteDirection.UPVOTE));
+                        mJobManager.addJobInBackground(new SubmissionVoteJob(submission, VoteDirection.UPVOTE));
                     }
                 } else {
                     new MaterialDialog.Builder(mContext)
@@ -202,9 +206,9 @@ public class SubmissionAdapter extends RecyclerView.Adapter<SubmissionAdapter.Vi
             public void onClick(View v) {
                 if (RedditApi.isAuthorized()) {
                     if (submission.getVote() == VoteDirection.DOWNVOTE) {
-                        mJobManager.addJobInBackground(new VoteJob(submission, VoteDirection.NO_VOTE));
+                        mJobManager.addJobInBackground(new SubmissionVoteJob(submission, VoteDirection.NO_VOTE));
                     } else {
-                        mJobManager.addJobInBackground(new VoteJob(submission, VoteDirection.DOWNVOTE));
+                        mJobManager.addJobInBackground(new SubmissionVoteJob(submission, VoteDirection.DOWNVOTE));
                     }
                 } else {
                     new MaterialDialog.Builder(mContext)

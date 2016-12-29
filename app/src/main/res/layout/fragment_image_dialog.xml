@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#ac000000"
-    tools:context="com.abby.redditgo.ui.ImageDialogFragment">
+    tools:context="com.abby.redditgo.ui.detail.ImageDialogFragment">
 
     <uk.co.senab.photoview.PhotoView
         android:id="@+id/image"

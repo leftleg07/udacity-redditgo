@@ -3,11 +3,12 @@ package com.abby.redditgo.di;
 import com.abby.redditgo.job.SubmissionFetchJob;
 import com.abby.redditgo.services.MyGcmJobService;
 import com.abby.redditgo.services.MyJobService;
-import com.abby.redditgo.ui.CommentActivity;
-import com.abby.redditgo.ui.CommentAdapter;
-import com.abby.redditgo.ui.LoginActivity;
-import com.abby.redditgo.ui.MainActivity;
-import com.abby.redditgo.ui.SubmissionAdapter;
+import com.abby.redditgo.ui.comment.CommentActivity;
+import com.abby.redditgo.ui.comment.CommentAdapter;
+import com.abby.redditgo.ui.comment.CommentComposeActivity;
+import com.abby.redditgo.ui.login.LoginActivity;
+import com.abby.redditgo.ui.main.MainActivity;
+import com.abby.redditgo.ui.main.SubmissionAdapter;
 
 import javax.inject.Singleton;
 
@@ -27,4 +28,5 @@ public interface ApplicationComponent {
     void inject(SubmissionAdapter adapter);
     void inject(CommentActivity commentActivity);
     void inject(CommentAdapter commentAdapter);
+    void inject(CommentComposeActivity commentComposeActivity);
 }

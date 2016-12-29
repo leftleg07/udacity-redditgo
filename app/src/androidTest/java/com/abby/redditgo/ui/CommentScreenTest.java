@@ -8,6 +8,7 @@ import android.support.test.runner.AndroidJUnit4;
 
 import com.abby.redditgo.MockApplication;
 import com.abby.redditgo.network.RedditApi;
+import com.abby.redditgo.ui.comment.CommentActivity;
 
 import net.dean.jraw.auth.AuthenticationManager;
 import net.dean.jraw.auth.AuthenticationState;
@@ -22,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import static com.abby.redditgo.ui.CommentActivity.EXTRA_SUBMISSION_ID;
+import static com.abby.redditgo.ui.comment.CommentActivity.EXTRA_SUBMISSION_ID;
 import static net.dean.jraw.auth.AuthenticationState.NONE;
 
 /**
@@ -52,6 +53,7 @@ public class CommentScreenTest {
     public void testCommentList() throws Exception {
         Intent intent = new Intent();
         intent.putExtra(EXTRA_SUBMISSION_ID, "5jvho3");
+//        intent.putExtra(EXTRA_SUBMISSION_ID, "5kdvhp");
 
         mActivityTestRule.launchActivity(intent);
 

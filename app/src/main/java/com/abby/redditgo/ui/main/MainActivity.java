@@ -1,4 +1,4 @@
-package com.abby.redditgo.ui;
+package com.abby.redditgo.ui.main;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -16,7 +16,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.abby.redditgo.BaseActivity;
+import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.R;
 import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.event.AccountEvent;
@@ -27,6 +27,7 @@ import com.abby.redditgo.job.SubmissionFetchJob;
 import com.abby.redditgo.job.SubredditFetchJob;
 import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.network.RedditApi;
+import com.abby.redditgo.ui.login.LoginActivity;
 import com.birbit.android.jobqueue.JobManager;
 import com.birbit.android.jobqueue.TagConstraint;
 

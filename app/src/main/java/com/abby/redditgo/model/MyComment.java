@@ -12,8 +12,7 @@ public class MyComment implements MultiLevelExpIndListAdapter.ExpIndData {
     private List<MyComment> mChildren;
     private boolean mIsGroup;
     private int mGroupSize;
-
-    public Comment comment;
+    private final Comment comment;
 
     public MyComment(Comment comment, int indentation) {
         this.comment = comment;
@@ -41,6 +40,7 @@ public class MyComment implements MultiLevelExpIndListAdapter.ExpIndData {
         mGroupSize = groupSize;
     }
 
+    public Comment getComment() { return comment; }
     public int getGroupSize() {
         return mGroupSize;
     }

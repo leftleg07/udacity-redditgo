@@ -3,46 +3,35 @@ package com.abby.redditgo.job;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.abby.redditgo.event.CommentErrorEvent;
-import com.abby.redditgo.event.CommentRefreshEvent;
+import com.abby.redditgo.event.VoteEvent;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.Job;
 import com.birbit.android.jobqueue.Params;
 import com.birbit.android.jobqueue.RetryConstraint;
 
-import net.dean.jraw.ApiException;
-import net.dean.jraw.http.NetworkException;
+import net.dean.jraw.models.Submission;
+import net.dean.jraw.models.VoteDirection;
 
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.UUID;
 
 /**
- * Created by gsshop on 2016. 12. 7..
+ * Created by gsshop on 2016. 10. 31..
  */
-public class CommentReplyCommentJob extends Job {
 
-    private final String replyText;
-    private final String fullname;
+public class SubmissionVoteJob extends Job {
 
-    public CommentReplyCommentJob(String fullname, String replyText) {
+
+    private final VoteDirection voteDirection;
+    private final Submission submission;
+
+    public SubmissionVoteJob(Submission submission, VoteDirection voteDirection) {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
         super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()));
-        this.fullname =fullname;
-        this.replyText = replyText;
-    }
-
-    @Override
-    public void onRun() throws Throwable {
-        try {
-            RedditApi.replyComment(fullname, replyText);
-            EventBus.getDefault().post(new CommentRefreshEvent());
-        } catch (ApiException e) {
-            EventBus.getDefault().post(new CommentErrorEvent(e.getMessage()));
-        } catch (NetworkException e) {
-            EventBus.getDefault().post(new CommentErrorEvent(e.getMessage()));
-        }
+        this.submission = submission;
+        this.voteDirection = voteDirection;
     }
 
     @Override
@@ -59,4 +48,13 @@ public class CommentReplyCommentJob extends Job {
     protected RetryConstraint shouldReRunOnThrowable(@NonNull Throwable throwable, int runCount, int maxRunCount) {
         return null;
     }
+
+
+    @Override
+    public void onRun() throws Throwable {
+        Submission newItem = RedditApi.vote(submission, voteDirection);
+        EventBus.getDefault().post(new VoteEvent(newItem));
+
+    }
+
 }

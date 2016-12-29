@@ -3,14 +3,15 @@ package com.abby.redditgo.job;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.abby.redditgo.event.CommentErrorEvent;
 import com.abby.redditgo.event.CommentEvent;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.Job;
 import com.birbit.android.jobqueue.Params;
 import com.birbit.android.jobqueue.RetryConstraint;
 import com.google.common.collect.Lists;
-import com.orhanobut.logger.Logger;
 
+import net.dean.jraw.http.NetworkException;
 import net.dean.jraw.models.CommentNode;
 import net.dean.jraw.models.TraversalMethod;
 
@@ -35,45 +36,42 @@ public class CommentFetchJob extends Job {
 
     @Override
     public void onRun() throws Throwable {
-        CommentNode node = RedditApi.comments(submissionId);
-        EventBus.getDefault().post(new CommentEvent(node.getChildren(), lastCommentSize));
-        lastCommentSize = node.getImmediateSize();
+        try {
+            CommentNode node = RedditApi.comments(submissionId);
 
-        // Load this node's comments first
-        while (!isCancelled() && node.hasMoreComments()) {
-            RedditApi.moreComments(node);
-            for (int i = lastCommentSize; !isCancelled() && i < node.getImmediateSize(); i++) {
-                CommentNode parent = node.get(i);
-
-                // Load the children's comments next
-                for (CommentNode child : parent.walkTree(TraversalMethod.BREADTH_FIRST)) {
-                    if(isCancelled()) {
-                        return;
-                    }
-                    while (!isCancelled() && child.hasMoreComments()) {
-                        RedditApi.moreComments(child);
-                    }
-
-                }
-            }
-
-            List<CommentNode> nodes = Lists.newArrayList(node.getChildren().listIterator(lastCommentSize));
-            EventBus.getDefault().post(new CommentEvent(nodes, lastCommentSize));
-
+            EventBus.getDefault().post(new CommentEvent(node.getChildren(), lastCommentSize));
             lastCommentSize = node.getImmediateSize();
 
-        }
-    }
-
-
-    void moreChildrenComment(CommentNode parent) {
-        for (CommentNode node : parent.walkTree(TraversalMethod.BREADTH_FIRST)) {
-            // Travel breadth first so we can accurately compare depths
-            while (node.hasMoreComments()) {
+            // Load this node's comments first
+            while (!isCancelled() && node.hasMoreComments()) {
                 RedditApi.moreComments(node);
+                for (int i = lastCommentSize; !isCancelled() && i < node.getImmediateSize(); i++) {
+                    CommentNode parent = node.get(i);
+
+                    // Load the children's comments next
+                    for (CommentNode child : parent.walkTree(TraversalMethod.BREADTH_FIRST)) {
+                        if (isCancelled()) {
+                            return;
+                        }
+                        while (!isCancelled() && child.hasMoreComments()) {
+                            RedditApi.moreComments(child);
+                        }
+
+                    }
+                }
+
+                List<CommentNode> nodes = Lists.newArrayList(node.getChildren().listIterator(lastCommentSize));
+                EventBus.getDefault().post(new CommentEvent(nodes, lastCommentSize));
+
+                lastCommentSize = node.getImmediateSize();
+
             }
+        } catch (NetworkException e) {
+            EventBus.getDefault().post(new CommentErrorEvent(e.getMessage()));
+            return;
         }
     }
+
 
     @Override
     public void onAdded() {
@@ -82,7 +80,6 @@ public class CommentFetchJob extends Job {
 
     @Override
     protected void onCancel(int cancelReason, @Nullable Throwable throwable) {
-Logger.i("onCancel");
     }
 
     @Override

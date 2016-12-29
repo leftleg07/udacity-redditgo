@@ -20,30 +20,27 @@ import java.util.UUID;
 /**
  * Created by gsshop on 2016. 12. 7..
  */
-public class CommentReplySubmissionJob extends Job {
+public class CommentDeleteJob extends Job {
 
-    private final String replyText;
-    private final String submissionId;
+    private final String fullname;
 
-    public CommentReplySubmissionJob(String submissionId, String replyText) {
+    public CommentDeleteJob(String fullname) {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
         super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()));
-        this.submissionId = submissionId;
-        this.replyText = replyText;
+        this.fullname = fullname;
     }
 
     @Override
     public void onRun() throws Throwable {
         try {
-            RedditApi.replySubmission(submissionId, replyText);
+            RedditApi.deleteComment(fullname);
             EventBus.getDefault().post(new CommentRefreshEvent());
         } catch (ApiException e) {
             EventBus.getDefault().post(new CommentErrorEvent(e.getMessage()));
         } catch (NetworkException e) {
             EventBus.getDefault().post(new CommentErrorEvent(e.getMessage()));
         }
-
     }
 
     @Override

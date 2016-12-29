@@ -1,17 +1,21 @@
 package com.abby.redditgo.network;
 
 import com.abby.redditgo.BuildConfig;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.orhanobut.logger.Logger;
 
 import net.dean.jraw.ApiException;
 import net.dean.jraw.RedditClient;
 import net.dean.jraw.auth.AuthenticationManager;
+import net.dean.jraw.http.NetworkException;
 import net.dean.jraw.http.oauth.Credentials;
 import net.dean.jraw.http.oauth.OAuthData;
 import net.dean.jraw.http.oauth.OAuthException;
 import net.dean.jraw.managers.AccountManager;
+import net.dean.jraw.managers.ModerationManager;
 import net.dean.jraw.models.Comment;
 import net.dean.jraw.models.CommentNode;
+import net.dean.jraw.models.Contribution;
 import net.dean.jraw.models.Listing;
 import net.dean.jraw.models.LoggedInAccount;
 import net.dean.jraw.models.Submission;
@@ -32,7 +36,15 @@ import java.util.UUID;
  */
 public class RedditApi {
     private static final String TAG = RedditApi.class.getSimpleName();
-    private static final RedditClient reddit = AuthenticationManager.get().getRedditClient();
+    private static final RedditClient reddit;
+    private static final AccountManager account;
+    private static final ModerationManager moderation;
+
+    static {
+        reddit = AuthenticationManager.get().getRedditClient();
+        account = new AccountManager(reddit);
+        moderation = new ModerationManager(reddit);
+    }
 
     public static void anonymous(UUID deviceId) {
         String clientId = BuildConfig.REDDIT_INSTALLED_CLIENT_ID;
@@ -119,39 +131,44 @@ public class RedditApi {
     }
 
     public static Submission vote(Submission submission, VoteDirection voteDirection) throws ApiException {
-        new AccountManager(reddit).vote(submission, voteDirection);
+        account.vote(submission, voteDirection);
         return reddit.getSubmission(submission.getId());
 
     }
 
-    public static CommentNode comments(String submissionId) {
+    /**
+     * comment api
+     */
+    public static CommentNode comments(String submissionId) throws NetworkException {
         return reddit.getSubmission(submissionId).getComments();
     }
 
-    public static String replySubmission(String submissionId, String replyText) {
-        Submission submission = reddit.getSubmission(submissionId);
-        try {
-            return new AccountManager(reddit).reply(submission, replyText);
-        } catch (ApiException e) {
-            return e.getMessage();
-        }
-    }
-
-
-    public static String replyComment(Comment replyTo, String replyText) {
-        try {
-            return new AccountManager(reddit).reply(replyTo, replyText);
-        } catch (ApiException e) {
-            return e.getMessage();
-        }
-    }
-
-
-    public static void moreComments(CommentNode node) {
+    public static void moreComments(CommentNode node) throws NetworkException {
         node.loadMoreComments(reddit);
     }
-
-    public static void loadFully(CommentNode node) {
-        node.loadFully(reddit);
+    public static String replySubmission(String submissionId, String replyText) throws NetworkException, ApiException {
+        Submission submission = reddit.getSubmission(submissionId);
+        return new AccountManager(reddit).reply(submission, replyText);
     }
+
+
+    public static String replyComment(final String fullname, String replyText) throws NetworkException, ApiException {
+        return account.reply(new Contribution(NullNode.getInstance()) {
+            @Override
+            public String getFullName() {
+                return fullname;
+            }
+        }, replyText);
+    }
+
+    public static void deleteComment(String fullname) throws NetworkException, ApiException {
+        moderation.delete(fullname);
+    }
+
+    public static void vote(Comment comment, VoteDirection voteDirection) throws NetworkException,  ApiException {
+        account.vote(comment, voteDirection);
+
+    }
+
+
 }

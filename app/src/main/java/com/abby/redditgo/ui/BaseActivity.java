@@ -1,9 +1,10 @@
-package com.abby.redditgo;
+package com.abby.redditgo.ui;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
+import com.abby.redditgo.MainApplication;
 import com.abby.redditgo.di.ApplicationComponent;
 
 /**
@@ -11,7 +12,7 @@ import com.abby.redditgo.di.ApplicationComponent;
  */
 
 public abstract class BaseActivity extends AppCompatActivity {
-    public  ApplicationComponent getComponent() {
+    public ApplicationComponent getComponent() {
         return ((MainApplication) getApplication()).getComponent();
     }
     @Override

@@ -1,4 +1,4 @@
-package com.abby.redditgo.ui;
+package com.abby.redditgo.ui.detail;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
