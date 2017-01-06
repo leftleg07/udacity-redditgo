@@ -9,11 +9,13 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 
-import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.R;
 import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.event.AttemptLoginEvent;
@@ -27,11 +29,13 @@ import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.model.MyComment;
 import com.abby.redditgo.model.MyContent;
 import com.abby.redditgo.network.RedditApi;
+import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.ui.login.LoginActivity;
 import com.birbit.android.jobqueue.JobManager;
 import com.birbit.android.jobqueue.TagConstraint;
 
 import net.dean.jraw.models.CommentNode;
+import net.dean.jraw.models.CommentSort;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -88,7 +92,7 @@ public class CommentActivity extends BaseActivity {
         });
 
         submissionId = getIntent().getStringExtra(EXTRA_SUBMISSION_ID);
-        mJobManager.addJobInBackground(new CommentFetchJob(submissionId));
+        mJobManager.addJobInBackground(new CommentFetchJob(submissionId, CommentSort.HOT));
 
         mRecyclerView.setHasFixedSize(true);
 
@@ -131,6 +135,65 @@ public class CommentActivity extends BaseActivity {
         EventBus.getDefault().unregister(this);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.filter_menu, menu);
+        return true;
+    }
+
+    /*
+     * Listen for option item selections so that we receive a notification
+     * when the user requests a refresh by selecting the refresh action bar item.
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_filter:
+                showFilteringPopUpMenu();
+                return true;
+        }
+
+        // User didn't trigger a refresh, let the superclass handle this action
+        return super.onOptionsItemSelected(item);
+
+    }
+
+    public void showFilteringPopUpMenu() {
+        PopupMenu popup = new PopupMenu(this, findViewById(R.id.menu_filter));
+        popup.getMenuInflater().inflate(R.menu.filter_submission, popup.getMenu());
+//        popup.getMenu().findItem(mLastFilterId).setChecked(true);
+//
+//        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+//            public boolean onMenuItemClick(MenuItem item) {
+//                if (mListener == null) {
+//                    return false;
+//                }
+//                onRefreshShowEvent(null);
+//                item.setChecked(true);
+//                switch (item.getItemId()) {
+//                    case R.id.menu_hot:
+//                        mListener.onSubTitleChange(R.string.filter_hot);
+//                        break;
+//                    case R.id.menu_new:
+//                        mListener.onSubTitleChange(R.string.filter_new);
+//                        break;
+//                    case R.id.menu_rising:
+//                        mListener.onSubTitleChange(R.string.filter_rising);
+//                        break;
+//                    case R.id.menu_controversial:
+//                        mListener.onSubTitleChange(R.string.filter_controversial);
+//                        break;
+//                    case R.id.menu_top:
+//                        mListener.onSubTitleChange(R.string.filter_top);
+//                        break;
+//                }
+//                return true;
+//            }
+//        });
+
+        popup.show();
+    }
+
     private List<MyComment> comments;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -142,7 +205,7 @@ public class CommentActivity extends BaseActivity {
             makeComments(node, (List<MyComment>) comment.getChildren());
         }
 
-        if (event.index == 0) {
+        if (event.first) {
             mAdapter.clear();
             MyContent content = getDummyContent();
             mAdapter.add(content);
@@ -235,6 +298,6 @@ public class CommentActivity extends BaseActivity {
     private void updateOperation() {
         mSwipeRefreshLayout.setRefreshing(false);
         mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.COMMENT_FETCH_ID);
-        mJobManager.addJobInBackground(new CommentFetchJob(submissionId));
+        mJobManager.addJobInBackground(new CommentFetchJob(submissionId, CommentSort.HOT));
     }
 }

@@ -52,8 +52,11 @@ public class CommentScreenTest {
     @Test
     public void testCommentList() throws Exception {
         Intent intent = new Intent();
-        intent.putExtra(EXTRA_SUBMISSION_ID, "5jvho3");
+//        intent.putExtra(EXTRA_SUBMISSION_ID, "5jvho3");
 //        intent.putExtra(EXTRA_SUBMISSION_ID, "5kdvhp");
+//        intent.putExtra(EXTRA_SUBMISSION_ID, "5lt5o4");
+//        intent.putExtra(EXTRA_SUBMISSION_ID, "5lwr91");
+        intent.putExtra(EXTRA_SUBMISSION_ID, "5m2ivk");
 
         mActivityTestRule.launchActivity(intent);
 

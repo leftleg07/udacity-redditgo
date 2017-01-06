@@ -8,6 +8,7 @@ import net.dean.jraw.ApiException;
 import net.dean.jraw.RedditClient;
 import net.dean.jraw.auth.AuthenticationManager;
 import net.dean.jraw.http.NetworkException;
+import net.dean.jraw.http.SubmissionRequest;
 import net.dean.jraw.http.oauth.Credentials;
 import net.dean.jraw.http.oauth.OAuthData;
 import net.dean.jraw.http.oauth.OAuthException;
@@ -15,6 +16,7 @@ import net.dean.jraw.managers.AccountManager;
 import net.dean.jraw.managers.ModerationManager;
 import net.dean.jraw.models.Comment;
 import net.dean.jraw.models.CommentNode;
+import net.dean.jraw.models.CommentSort;
 import net.dean.jraw.models.Contribution;
 import net.dean.jraw.models.Listing;
 import net.dean.jraw.models.LoggedInAccount;
@@ -139,13 +141,15 @@ public class RedditApi {
     /**
      * comment api
      */
-    public static CommentNode comments(String submissionId) throws NetworkException {
-        return reddit.getSubmission(submissionId).getComments();
+    public static CommentNode comments(String submissionId, CommentSort sort) throws NetworkException {
+        SubmissionRequest request = new SubmissionRequest.Builder(submissionId).sort(sort).build();
+        return reddit.getSubmission(request).getComments();
     }
 
-    public static void moreComments(CommentNode node) throws NetworkException {
-        node.loadMoreComments(reddit);
+    public static List<CommentNode> moreComments(CommentNode node) throws NetworkException {
+        return node.loadMoreComments(reddit);
     }
+
     public static String replySubmission(String submissionId, String replyText) throws NetworkException, ApiException {
         Submission submission = reddit.getSubmission(submissionId);
         return new AccountManager(reddit).reply(submission, replyText);
@@ -167,7 +171,10 @@ public class RedditApi {
 
     public static void vote(Comment comment, VoteDirection voteDirection) throws NetworkException,  ApiException {
         account.vote(comment, voteDirection);
+    }
 
+    public static void loadFully(CommentNode node) {
+        node.loadFully(reddit);
     }
 
 

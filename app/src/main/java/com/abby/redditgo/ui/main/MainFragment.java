@@ -2,6 +2,7 @@ package com.abby.redditgo.ui.main;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
@@ -17,9 +18,11 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.abby.redditgo.R;
+import com.abby.redditgo.event.RefreshShowEvent;
 import com.abby.redditgo.event.SubmissionErrorEvent;
 import com.abby.redditgo.event.SubmissionEvent;
 import com.abby.redditgo.event.VoteEvent;
+import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.dean.jraw.models.Submission;
 import net.dean.jraw.paginators.Sorting;
@@ -121,7 +124,7 @@ public class MainFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.tasks_fragment_menu, menu);
+        inflater.inflate(R.menu.filter_menu, menu);
     }
 
     /*
@@ -131,17 +134,6 @@ public class MainFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-
-            // Check if user triggered a refresh:
-            case R.id.menu_refresh:
-                // Signal SwipeRefreshLayout to start the progress indicator
-                mSwipeRefreshLayout.setRefreshing(true);
-
-                // Start the refresh background task.
-                // This method calls setRefreshing(false) when it's finished.
-                updateOperation();
-
-                return true;
             case R.id.menu_filter:
                 showFilteringPopUpMenu();
                 return true;
@@ -197,9 +189,12 @@ public class MainFragment extends Fragment {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSubmissionErrorEvent(SubmissionErrorEvent event) {
-//        Snackbar.make(mFAB, event.errorMessage, Snackbar.LENGTH_LONG)
-//                .setAction("Action", null).show();
+        new MaterialDialog.Builder(getContext())
+                .content(event.errorMessage)
+                .positiveText(android.R.string.ok)
+                .show();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -213,12 +208,22 @@ public class MainFragment extends Fragment {
                 break;
             }
         }
+    }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onRefreshShowEvent(RefreshShowEvent event) {
+        mSwipeRefreshLayout.setRefreshing(true);
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mSwipeRefreshLayout.setRefreshing(false);
+            }
+        }, 2800);
     }
 
     public void showFilteringPopUpMenu() {
         PopupMenu popup = new PopupMenu(getContext(), getActivity().findViewById(R.id.menu_filter));
-        popup.getMenuInflater().inflate(R.menu.filter_tasks, popup.getMenu());
+        popup.getMenuInflater().inflate(R.menu.filter_submission, popup.getMenu());
         popup.getMenu().findItem(mLastFilterId).setChecked(true);
 
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
@@ -226,6 +231,7 @@ public class MainFragment extends Fragment {
                 if (mListener == null) {
                     return false;
                 }
+                onRefreshShowEvent(null);
                 item.setChecked(true);
                 switch (item.getItemId()) {
                     case R.id.menu_hot:
@@ -252,7 +258,7 @@ public class MainFragment extends Fragment {
     }
 
     private void updateOperation() {
-        mSwipeRefreshLayout.setRefreshing(false);
+        onRefreshShowEvent(null);
         if (mListener == null) {
             return;
         }

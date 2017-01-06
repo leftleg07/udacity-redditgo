@@ -9,10 +9,10 @@ import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.Job;
 import com.birbit.android.jobqueue.Params;
 import com.birbit.android.jobqueue.RetryConstraint;
-import com.google.common.collect.Lists;
 
 import net.dean.jraw.http.NetworkException;
 import net.dean.jraw.models.CommentNode;
+import net.dean.jraw.models.CommentSort;
 import net.dean.jraw.models.TraversalMethod;
 
 import org.greenrobot.eventbus.EventBus;
@@ -25,29 +25,28 @@ import java.util.List;
 public class CommentFetchJob extends Job {
 
     private final String submissionId;
-    private int lastCommentSize = 0;
+    private final CommentSort sort;
 
-    public CommentFetchJob(String submissionId) {
+    public CommentFetchJob(String submissionId, CommentSort sort) {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
         super(new Params(Priority.MID).requireNetwork().addTags(JobId.COMMENT_FETCH_ID));
         this.submissionId = submissionId;
+        this.sort = sort;
     }
 
     @Override
     public void onRun() throws Throwable {
         try {
-            CommentNode node = RedditApi.comments(submissionId);
+            CommentNode node = RedditApi.comments(submissionId, sort);
 
-            EventBus.getDefault().post(new CommentEvent(node.getChildren(), lastCommentSize));
-            lastCommentSize = node.getImmediateSize();
+            EventBus.getDefault().post(new CommentEvent(node.getChildren(), true));
 
+            RedditApi.loadFully(node);
             // Load this node's comments first
             while (!isCancelled() && node.hasMoreComments()) {
-                RedditApi.moreComments(node);
-                for (int i = lastCommentSize; !isCancelled() && i < node.getImmediateSize(); i++) {
-                    CommentNode parent = node.get(i);
-
+                List<CommentNode> nodes = RedditApi.moreComments(node);
+                for (CommentNode parent : nodes) {
                     // Load the children's comments next
                     for (CommentNode child : parent.walkTree(TraversalMethod.BREADTH_FIRST)) {
                         if (isCancelled()) {
@@ -60,10 +59,8 @@ public class CommentFetchJob extends Job {
                     }
                 }
 
-                List<CommentNode> nodes = Lists.newArrayList(node.getChildren().listIterator(lastCommentSize));
-                EventBus.getDefault().post(new CommentEvent(nodes, lastCommentSize));
+                EventBus.getDefault().post(new CommentEvent(nodes, false));
 
-                lastCommentSize = node.getImmediateSize();
 
             }
         } catch (NetworkException e) {

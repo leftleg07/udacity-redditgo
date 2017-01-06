@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.StringRes;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -16,17 +15,18 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.R;
 import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.event.AccountEvent;
+import com.abby.redditgo.event.RefreshShowEvent;
 import com.abby.redditgo.event.SigninEvent;
 import com.abby.redditgo.event.SubredditEvent;
 import com.abby.redditgo.job.AccountJob;
+import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.job.SubmissionFetchJob;
 import com.abby.redditgo.job.SubredditFetchJob;
-import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.network.RedditApi;
+import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.ui.login.LoginActivity;
 import com.birbit.android.jobqueue.JobManager;
 import com.birbit.android.jobqueue.TagConstraint;
@@ -44,7 +44,6 @@ import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 
 public class MainActivity extends BaseActivity implements MainFragment.OnFragmentInteractionListener {
@@ -122,11 +121,6 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
         component.inject(this);
     }
 
-    @OnClick(R.id.fab)
-    public void onFABClick(View view) {
-        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show();
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -189,6 +183,7 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
     }
 
     public void fetchSubmission(String subreddit, Sorting sorting) {
+        EventBus.getDefault().post(new RefreshShowEvent());
         lastSubreddit = subreddit;
         lastSorting = sorting;
         mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.SUBMISSION_FETCH_ID);

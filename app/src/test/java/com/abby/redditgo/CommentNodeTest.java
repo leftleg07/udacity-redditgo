@@ -1,24 +1,31 @@
 package com.abby.redditgo;
 
 import com.google.common.collect.ImmutableMap;
+
 import net.dean.jraw.http.NetworkException;
+import net.dean.jraw.http.SubmissionRequest;
 import net.dean.jraw.models.CommentNode;
+import net.dean.jraw.models.CommentSort;
 import net.dean.jraw.models.LocationHint;
 import net.dean.jraw.models.TraversalMethod;
+
 import org.testng.annotations.Test;
 
 import java.util.Map;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 public class CommentNodeTest extends RedditTest {
-    private final CommentNode simpleTree;
+    private final CommentNode simpleTree = null;
     private final int simpleTreeSize = 8;
 
-    public CommentNodeTest() {
-        super();
-        this.simpleTree = reddit.getSubmission("2zsyu4").getComments();
-    }
+//    public CommentNodeTest() {
+//        super();
+//        this.simpleTree = null;
+////        this.simpleTree = reddit.getSubmission("2zsyu4").getComments();
+//    }
 
     @Test
     public void testDepth() {
@@ -43,8 +50,13 @@ public class CommentNodeTest extends RedditTest {
     @Test
     public void testLoadMoreComments() {
         try {
-            CommentNode node = reddit.getSubmission("92dd8").getComments();
-            node.loadMoreComments(reddit);
+//            CommentNode node = reddit.getSubmission("92dd8").getComments();
+            SubmissionRequest.Builder request = new SubmissionRequest.Builder("5m40x3");
+            request.sort(CommentSort.HOT);
+            CommentNode node = reddit.getSubmission(request.build()).getComments();
+            while(node.hasMoreComments()) {
+                node.loadMoreComments(reddit);
+            }
         } catch (NetworkException e) {
             handle(e);
         }

@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.abby.redditgo.di.ApplicationComponent;
+import com.abby.redditgo.event.SubmissionErrorEvent;
 import com.abby.redditgo.event.SubmissionEvent;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.Params;
@@ -13,6 +14,7 @@ import com.orhanobut.logger.Logger;
 import net.dean.jraw.RedditClient;
 import net.dean.jraw.auth.AuthenticationManager;
 import net.dean.jraw.auth.AuthenticationState;
+import net.dean.jraw.http.NetworkException;
 import net.dean.jraw.models.Listing;
 import net.dean.jraw.models.Submission;
 import net.dean.jraw.paginators.Sorting;
@@ -41,6 +43,7 @@ public class SubmissionFetchJob extends BaseJob {
 
     /**
      * subreddit is null, fetch front page
+     *
      * @param subreddit
      * @param sorting
      */
@@ -71,26 +74,30 @@ public class SubmissionFetchJob extends BaseJob {
 
     @Override
     public void onRun() throws Throwable {
-        AuthenticationState state = AuthenticationManager.get().checkAuthState();
-        if(state == NONE) {
-            RedditApi.anonymous(deviceId);
-        }
+        try {
+            AuthenticationState state = AuthenticationManager.get().checkAuthState();
+            if (state == NONE) {
+                RedditApi.anonymous(deviceId);
+            }
 
-        RedditClient reddit = AuthenticationManager.get().getRedditClient();
-        SubredditPaginator paginator = new SubredditPaginator(reddit, mSubreddit);
-        paginator.setSorting(mSorting);
-        while (paginator.hasNext()) {
-            Listing<Submission> submissions = paginator.next();
-            List<Submission> latestSubmissions = new ArrayList<>();
-            for (Submission submission : submissions) {
-                if (!submission.isNsfw()) {
-                    latestSubmissions.add(submission);
+            RedditClient reddit = AuthenticationManager.get().getRedditClient();
+            SubredditPaginator paginator = new SubredditPaginator(reddit, mSubreddit);
+            paginator.setSorting(mSorting);
+            while (paginator.hasNext()) {
+                Listing<Submission> submissions = paginator.next();
+                List<Submission> latestSubmissions = new ArrayList<>();
+                for (Submission submission : submissions) {
+                    if (!submission.isNsfw()) {
+                        latestSubmissions.add(submission);
+                    }
                 }
+                if (isCancelled()) {
+                    break;
+                }
+                EventBus.getDefault().post(new SubmissionEvent(submissions, mSorting, paginator.getPageIndex()));
             }
-            if(isCancelled()) {
-                break;
-            }
-            EventBus.getDefault().post(new SubmissionEvent(submissions, mSorting, paginator.getPageIndex()));
+        } catch (NetworkException e) {
+            EventBus.getDefault().post(new SubmissionErrorEvent(e.getMessage()));
         }
 
     }

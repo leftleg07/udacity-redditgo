@@ -21,6 +21,7 @@ import com.orhanobut.logger.Logger;
 import net.dean.jraw.auth.AuthenticationManager;
 import net.dean.jraw.auth.AuthenticationState;
 import net.dean.jraw.models.CommentNode;
+import net.dean.jraw.models.CommentSort;
 import net.dean.jraw.models.Submission;
 import net.dean.jraw.models.Subreddit;
 import net.dean.jraw.paginators.Sorting;
@@ -145,7 +146,7 @@ public class RedditApiTest {
         }
         comments = new ArrayList<MyComment>();
         String submissionId = "5ilkvt";
-        mJobManager.addJobInBackground(new CommentFetchJob(submissionId));
+        mJobManager.addJobInBackground(new CommentFetchJob(submissionId, CommentSort.HOT));
         mSignal.await();
     }
 

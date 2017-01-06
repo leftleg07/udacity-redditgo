@@ -16,6 +16,7 @@ import static org.testng.Assert.*;
  */
 public class SubmissionRequestTest extends RedditTest {
     private static final String SUBMISSION_ID = "92dd8";
+//    private static final String SUBMISSION_ID = "5m2ivk";
     private static final String FOCUS_COMMENT_ID = "c0b73aj";
     private SubmissionRequest.Builder request;
     private Submission s;
@@ -73,9 +74,14 @@ public class SubmissionRequestTest extends RedditTest {
 
     @Test
     public void testLimit() {
-        request.limit(1);
-        s = get();
-        assertEquals(s.getComments().getTotalSize(), 1);
+        request.sort(CommentSort.TOP);
+        CommentNode node = get().getComments();
+
+        while(node.hasMoreComments()) {
+            node.loadMoreComments(reddit);
+        }
+
+//        assertEquals(node.getTotalSize(), 1);
     }
 
     @Test

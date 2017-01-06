@@ -3,12 +3,14 @@ package com.abby.redditgo.job;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.abby.redditgo.event.SubmissionErrorEvent;
 import com.abby.redditgo.event.VoteEvent;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.Job;
 import com.birbit.android.jobqueue.Params;
 import com.birbit.android.jobqueue.RetryConstraint;
 
+import net.dean.jraw.http.NetworkException;
 import net.dean.jraw.models.Submission;
 import net.dean.jraw.models.VoteDirection;
 
@@ -52,8 +54,12 @@ public class SubmissionVoteJob extends Job {
 
     @Override
     public void onRun() throws Throwable {
-        Submission newItem = RedditApi.vote(submission, voteDirection);
-        EventBus.getDefault().post(new VoteEvent(newItem));
+        try {
+            Submission newItem = RedditApi.vote(submission, voteDirection);
+            EventBus.getDefault().post(new VoteEvent(newItem));
+        } catch (NetworkException e) {
+            EventBus.getDefault().post(new SubmissionErrorEvent(e.getMessage()));
+        }
 
     }
 

@@ -9,10 +9,10 @@ import java.util.List;
  */
 public class CommentEvent {
     public final List<CommentNode> nodes;
-    public final int index;
+    public final boolean first;
 
-    public CommentEvent(List<CommentNode> nodes, int index) {
+    public CommentEvent(List<CommentNode> nodes, boolean first) {
         this.nodes = nodes;
-        this.index = index;
+        this.first = first;
     }
 }
