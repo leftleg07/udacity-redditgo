@@ -1,4 +1,4 @@
-package com.abby.redditgo.data;
+package com.abby.redditgo.network;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
@@ -6,13 +6,10 @@ import android.support.test.runner.AndroidJUnit4;
 import com.abby.redditgo.MockApplication;
 import com.abby.redditgo.event.CommentEvent;
 import com.abby.redditgo.event.SubmissionEvent;
-import com.abby.redditgo.event.SubredditEvent;
 import com.abby.redditgo.job.CommentFetchJob;
 import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.job.SubmissionFetchJob;
-import com.abby.redditgo.job.SubredditFetchJob;
 import com.abby.redditgo.model.MyComment;
-import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.JobManager;
 import com.birbit.android.jobqueue.TagConstraint;
 import com.google.common.truth.Truth;
@@ -23,7 +20,6 @@ import net.dean.jraw.auth.AuthenticationState;
 import net.dean.jraw.models.CommentNode;
 import net.dean.jraw.models.CommentSort;
 import net.dean.jraw.models.Submission;
-import net.dean.jraw.models.Subreddit;
 import net.dean.jraw.paginators.Sorting;
 
 import org.greenrobot.eventbus.EventBus;
@@ -40,9 +36,7 @@ import java.util.concurrent.CountDownLatch;
 
 import javax.inject.Inject;
 
-import static com.google.common.truth.Truth.assertThat;
 import static net.dean.jraw.auth.AuthenticationState.NONE;
-import static net.dean.jraw.auth.AuthenticationState.READY;
 
 /**
  * Created by gsshop on 2016. 10. 20..
@@ -73,38 +67,6 @@ public class RedditApiTest {
 
     }
 
-    private void login() {
-        String username = "e07skim";
-        String password = "eskim3164";
-        String user = RedditApi.signIn(username, password);
-        assertThat(user).isEqualTo(username);
-    }
-
-    @Test
-    public void testSignIn() throws Exception {
-        login();
-        AuthenticationState state = AuthenticationManager.get().checkAuthState();
-        assertThat(state).isEqualTo(READY);
-
-    }
-
-    @Test
-    public void testFetchSubreddits() throws Exception {
-        if (!RedditApi.isAuthorized()) {
-            login();
-        }
-
-        mJobManager.addJobInBackground(new SubredditFetchJob());
-        mSignal.await();
-    }
-
-    @Subscribe
-    public void onSubredditEvent(SubredditEvent event) {
-        for (Subreddit subreddit : event.subreddits) {
-            Logger.i(subreddit.getDisplayName());
-        }
-        mSignal.countDown();
-    }
 
     @Test
     public void testFetchFrontPage() throws Exception {

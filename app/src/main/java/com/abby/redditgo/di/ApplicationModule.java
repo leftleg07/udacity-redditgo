@@ -126,8 +126,7 @@ public class ApplicationModule {
 
     @Singleton
     @Provides
-    public ContentResolver getContentResolver() {
+    public ContentResolver provideContentResolver() {
         return mApplicationContext.getContentResolver();
     }
-
 }

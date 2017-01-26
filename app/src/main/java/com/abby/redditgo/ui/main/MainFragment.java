@@ -1,11 +1,14 @@
 package com.abby.redditgo.ui.main;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.PopupMenu;
@@ -18,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.abby.redditgo.R;
+import com.abby.redditgo.data.RedditgoProvider;
 import com.abby.redditgo.event.RefreshShowEvent;
 import com.abby.redditgo.event.SubmissionErrorEvent;
 import com.abby.redditgo.event.SubmissionEvent;
@@ -39,9 +43,27 @@ import butterknife.ButterKnife;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MainFragment extends Fragment {
+public class MainFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String KEY_POSITION = "_key_position";
+    private static final String KEY_SUBREDDIT = "_key_subreddit";
+
+    private static final int LOADER_ID_FRONT_PAGE_HOT = 0;
+    private static final int LOADER_ID_FRONT_PAGE_NEW = 1;
+    private static final int LOADER_ID_FRONT_PAGE_RISING = 2;
+    private static final int LOADER_ID_FRONT_PAGE_CONTROVERSAL = 3;
+    private static final int LOADER_ID_FRONT_PAGE_TOP = 4;
+    private static final int LOADER_ID_ALL_HOT = 5;
+    private static final int LOADER_ID_ALL_NEW = 6;
+    private static final int LOADER_ID_ALL_RISING = 7;
+    private static final int LOADER_ID_ALL_CONTROVERSAL = 8;
+    private static final int LOADER_ID_ALL_TOP = 9;
+    private static final int LOADER_ID_SUBMISSION_HOT = 10;
+    private static final int LOADER_ID_SUBMISSION_NEW = 11;
+    private static final int LOADER_ID_SUBMISSION_RISING = 12;
+    private static final int LOADER_ID_SUBMISSION_CONTROVERSAL = 13;
+    private static final int LOADER_ID_SUBMISSION_TOP = 14;
+
 
     @BindView(R.id.swiperefresh)
     SwipeRefreshLayout mSwipeRefreshLayout;
@@ -54,6 +76,7 @@ public class MainFragment extends Fragment {
 
     private int mLastFilterId = R.id.menu_hot;
     private int mPosition = 0;
+    private AAdapter mAdapter = null;
 
     public MainFragment() {
     }
@@ -88,9 +111,9 @@ public class MainFragment extends Fragment {
         mLayoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(mLayoutManager);
 
-        // specify an adapter (see also next example)
-        SubmissionAdapter adapter = new SubmissionAdapter(getContext());
-        mRecyclerView.setAdapter(adapter);
+        // specify an mAdapter (see also next example)
+        mAdapter = new AAdapter(getContext(), null);
+        mRecyclerView.setAdapter(mAdapter);
 
         /*
         * Sets up a SwipeRefreshLayout.OnRefreshListener that is invoked when the user
@@ -107,7 +130,7 @@ public class MainFragment extends Fragment {
                 }
         );
 
-
+        getLoaderManager().initLoader(LOADER_ID_FRONT_PAGE_HOT, null, this);
     }
 
     @Override
@@ -161,6 +184,8 @@ public class MainFragment extends Fragment {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSubmissionEvent(SubmissionEvent event) {
+        if (true) return;
+
         if (event.mSorting == Sorting.HOT) {
             mLastFilterId = R.id.menu_hot;
         } else if (event.mSorting == Sorting.NEW) {
@@ -212,13 +237,72 @@ public class MainFragment extends Fragment {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onRefreshShowEvent(RefreshShowEvent event) {
+        switch (event.sorting) {
+            case HOT:
+                mLastFilterId = R.id.menu_hot;
+                if (event.subreddit == null) {
+                    getLoaderManager().restartLoader(LOADER_ID_FRONT_PAGE_HOT, null, this);
+                } else if (event.subreddit.equals("all")) {
+                    getLoaderManager().restartLoader(LOADER_ID_ALL_HOT, null, this);
+                } else {
+                    Bundle args = new Bundle();
+                    args.putString(KEY_SUBREDDIT, event.subreddit);
+                    getLoaderManager().restartLoader(LOADER_ID_SUBMISSION_HOT, args, this);
+                }
+                break;
+            case NEW:
+                mLastFilterId = R.id.menu_new;
+                if (event.subreddit == null) {
+                    getLoaderManager().restartLoader(LOADER_ID_FRONT_PAGE_NEW, null, this);
+                } else if (event.subreddit.equals("all")) {
+                    getLoaderManager().restartLoader(LOADER_ID_ALL_NEW, null, this);
+                } else {
+                    Bundle args = new Bundle();
+                    args.putString(KEY_SUBREDDIT, event.subreddit);
+                    getLoaderManager().restartLoader(LOADER_ID_SUBMISSION_NEW, args, this);
+                }
+                break;
+            case RISING:
+                mLastFilterId = R.id.menu_rising;
+                if (event.subreddit == null) {
+                    getLoaderManager().restartLoader(LOADER_ID_FRONT_PAGE_RISING, null, this);
+                } else if (event.subreddit.equals("all")) {
+                    getLoaderManager().restartLoader(LOADER_ID_ALL_RISING, null, this);
+                } else {
+                    Bundle args = new Bundle();
+                    args.putString(KEY_SUBREDDIT, event.subreddit);
+                    getLoaderManager().restartLoader(LOADER_ID_SUBMISSION_RISING, args, this);
+                }
+                break;
+            case CONTROVERSIAL:
+                mLastFilterId = R.id.menu_controversial;
+                if (event.subreddit == null) {
+                    getLoaderManager().restartLoader(LOADER_ID_FRONT_PAGE_CONTROVERSAL, null, this);
+                } else if (event.subreddit.equals("all")) {
+                    getLoaderManager().restartLoader(LOADER_ID_ALL_CONTROVERSAL, null, this);
+                } else {
+                    Bundle args = new Bundle();
+                    args.putString(KEY_SUBREDDIT, event.subreddit);
+                    getLoaderManager().restartLoader(LOADER_ID_SUBMISSION_CONTROVERSAL, args, this);
+                }
+                break;
+            case TOP:
+                mLastFilterId = R.id.menu_top;
+                if (event.subreddit == null) {
+                    getLoaderManager().restartLoader(LOADER_ID_FRONT_PAGE_TOP, null, this);
+                } else if (event.subreddit.equals("all")) {
+                    getLoaderManager().restartLoader(LOADER_ID_ALL_TOP, null, this);
+                } else {
+                    Bundle args = new Bundle();
+                    args.putString(KEY_SUBREDDIT, event.subreddit);
+                    getLoaderManager().restartLoader(LOADER_ID_SUBMISSION_TOP, args, this);
+                }
+                break;
+        }
+
+
         mSwipeRefreshLayout.setRefreshing(true);
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mSwipeRefreshLayout.setRefreshing(false);
-            }
-        }, 2800);
+
     }
 
     public void showFilteringPopUpMenu() {
@@ -231,7 +315,6 @@ public class MainFragment extends Fragment {
                 if (mListener == null) {
                     return false;
                 }
-                onRefreshShowEvent(null);
                 item.setChecked(true);
                 switch (item.getItemId()) {
                     case R.id.menu_hot:
@@ -258,11 +341,66 @@ public class MainFragment extends Fragment {
     }
 
     private void updateOperation() {
-        onRefreshShowEvent(null);
         if (mListener == null) {
             return;
         }
         mListener.refresh();
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String subreddit = null;
+        if (args != null) {
+            subreddit = args.getString(KEY_SUBREDDIT);
+        }
+        switch (id) {
+            case LOADER_ID_FRONT_PAGE_HOT:
+                return new CursorLoader(getActivity(), RedditgoProvider.FrontPageHot.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_FRONT_PAGE_NEW:
+                return new CursorLoader(getActivity(), RedditgoProvider.FrontPageNew.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_FRONT_PAGE_RISING:
+                return new CursorLoader(getActivity(), RedditgoProvider.FrontPageRising.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_FRONT_PAGE_CONTROVERSAL:
+                return new CursorLoader(getActivity(), RedditgoProvider.FrontPageControversal.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_FRONT_PAGE_TOP:
+                return new CursorLoader(getActivity(), RedditgoProvider.FrontPageTop.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_ALL_HOT:
+                return new CursorLoader(getActivity(), RedditgoProvider.AllHot.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_ALL_NEW:
+                return new CursorLoader(getActivity(), RedditgoProvider.AllNew.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_ALL_RISING:
+                return new CursorLoader(getActivity(), RedditgoProvider.AllRising.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_ALL_CONTROVERSAL:
+                return new CursorLoader(getActivity(), RedditgoProvider.AllControversal.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_ALL_TOP:
+                return new CursorLoader(getActivity(), RedditgoProvider.AllTop.CONTENT_URI, null, null, null, null);
+            case LOADER_ID_SUBMISSION_HOT:
+                return new CursorLoader(getActivity(), RedditgoProvider.SubmissionHot.withSubreddit(subreddit), null, null, null, null);
+            case LOADER_ID_SUBMISSION_NEW:
+                return new CursorLoader(getActivity(), RedditgoProvider.SubmissionNew.withSubreddit(subreddit), null, null, null, null);
+            case LOADER_ID_SUBMISSION_RISING:
+                return new CursorLoader(getActivity(), RedditgoProvider.SubmissionRising.withSubreddit(subreddit), null, null, null, null);
+            case LOADER_ID_SUBMISSION_CONTROVERSAL:
+                return new CursorLoader(getActivity(), RedditgoProvider.SubmissionControversal.withSubreddit(subreddit), null, null, null, null);
+            case LOADER_ID_SUBMISSION_TOP:
+                return new CursorLoader(getActivity(), RedditgoProvider.SubmissionTop.withSubreddit(subreddit), null, null, null, null);
+        }
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        int id = loader.getId();
+        int count = data.getCount();
+        if (count > 0) {
+            mSwipeRefreshLayout.setRefreshing(false);
+            mAdapter.swapCursor(data);
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mAdapter.swapCursor(null);
     }
 
     /**

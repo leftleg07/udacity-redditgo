@@ -1,6 +1,11 @@
 package com.abby.redditgo.ui.main;
 
+import android.app.LoaderManager;
+import android.content.ContentResolver;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.annotation.StringRes;
 import android.support.design.widget.NavigationView;
@@ -16,11 +21,12 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.abby.redditgo.R;
+import com.abby.redditgo.data.RedditgoProvider;
+import com.abby.redditgo.data.SubredditColumn;
 import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.event.AccountEvent;
 import com.abby.redditgo.event.RefreshShowEvent;
 import com.abby.redditgo.event.SigninEvent;
-import com.abby.redditgo.event.SubredditEvent;
 import com.abby.redditgo.job.AccountJob;
 import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.job.SubmissionFetchJob;
@@ -30,30 +36,35 @@ import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.ui.login.LoginActivity;
 import com.birbit.android.jobqueue.JobManager;
 import com.birbit.android.jobqueue.TagConstraint;
+import com.orhanobut.logger.Logger;
 
-import net.dean.jraw.models.Subreddit;
 import net.dean.jraw.paginators.Sorting;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.util.List;
-
 import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+;
 
-public class MainActivity extends BaseActivity implements MainFragment.OnFragmentInteractionListener {
+
+public class MainActivity extends BaseActivity implements MainFragment.OnFragmentInteractionListener, LoaderManager.LoaderCallbacks<Cursor> {
     private static final int SUBREDDIT_MENU_INDEX = 2;
     private static final String KEY_SUBREDDIT = "_key_subreddit";
     private static final String KEY_SORTING = "_key_sorting";
     private static final String KEY_TITLE = "_key_title";
 
+    private static final int LOADER_ID_SUBREDDIT = 0;
+
     @Inject
     JobManager mJobManager;
+
+    @Inject
+    ContentResolver mContentResolver;
 
     @BindView(R.id.toolbar)
     Toolbar mToolbar;
@@ -72,6 +83,7 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
 
     private String lastSubreddit = null;
     private Sorting lastSorting = Sorting.HOT;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +126,8 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
             mTitleView.setText(title);
             fetchSubmission(subreddit, sorting);
         }
+
+        getLoaderManager().initLoader(LOADER_ID_SUBREDDIT, null, this);
     }
 
     @Override
@@ -150,29 +164,13 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
         outState.putString(KEY_TITLE, title);
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onSubredditEvent(SubredditEvent event) {
-        List<Subreddit> subreddits = event.subreddits;
-        SubMenu subMenu = mNavigationView.getMenu().getItem(SUBREDDIT_MENU_INDEX).getSubMenu();
-
-        for (final Subreddit subreddit : subreddits) {
-            subMenu.add(subreddit.getDisplayName()).setIcon(R.drawable.ic_menu).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-                @Override
-                public boolean onMenuItemClick(MenuItem item) {
-                    String title = String.valueOf(item.getTitle());
-                    mTitleView.setText(title);
-                    fetchSubmission(title, Sorting.HOT);
-                    return false;
-                }
-            });
-        }
-    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSigninEvent(SigninEvent event) {
         if (RedditApi.isAuthorized()) {
             mLoginButton.setVisibility(View.GONE);
             mUserNameText.setText(event.username);
+            mContentResolver.notifyChange(RedditgoProvider.Subreddit.CONTENT_URI, null, false);
             mJobManager.addJobInBackground(new SubredditFetchJob());
         }
     }
@@ -183,7 +181,7 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
     }
 
     public void fetchSubmission(String subreddit, Sorting sorting) {
-        EventBus.getDefault().post(new RefreshShowEvent());
+        EventBus.getDefault().post(new RefreshShowEvent(subreddit, sorting));
         lastSubreddit = subreddit;
         lastSorting = sorting;
         mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.SUBMISSION_FETCH_ID);
@@ -252,5 +250,47 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
     @Override
     public void refresh() {
         fetchSubmission(lastSubreddit, lastSorting);
+    }
+
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        if (id == LOADER_ID_SUBREDDIT) {
+            return new CursorLoader(this, RedditgoProvider.Subreddit.CONTENT_URI, null, null, null, null);
+        }
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if (data != null && data.moveToFirst()) {
+            switch (loader.getId()) {
+                case LOADER_ID_SUBREDDIT:
+                    Logger.i("count: " + data.getCount());
+                    if (RedditApi.isAuthorized() && data.getCount() > 0) {
+                        SubMenu subMenu = mNavigationView.getMenu().getItem(SUBREDDIT_MENU_INDEX).getSubMenu();
+                        subMenu.clear();
+                        while (data.moveToNext()) {
+                            String displayName = data.getString(data.getColumnIndex(SubredditColumn.DISPLAY_NAME));
+                            subMenu.add(displayName).setIcon(R.drawable.ic_menu).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                                @Override
+                                public boolean onMenuItemClick(MenuItem item) {
+                                    String title = String.valueOf(item.getTitle());
+                                    mTitleView.setText(title);
+                                    fetchSubmission(title, Sorting.HOT);
+                                    return false;
+                                }
+                            });
+                        }
+                        break;
+                    }
+            }
+
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
     }
 }

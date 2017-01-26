@@ -14,8 +14,6 @@ import android.widget.TextView;
 import com.abby.redditgo.R;
 import com.bumptech.glide.Glide;
 
-import net.dean.jraw.models.Submission;
-
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -49,15 +47,16 @@ public class ImageDialogFragment extends DialogFragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param submission Parameter 1.
+     * @param title
+     * @param url
      * @return A new instance of fragment ImageDialogFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static ImageDialogFragment newInstance(Submission submission) {
+    public static ImageDialogFragment newInstance(String title, String url) {
         ImageDialogFragment fragment = new ImageDialogFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM_TITLE, submission.getTitle());
-        args.putString(ARG_PARAM_IMAGE_URL, submission.getUrl());
+        args.putString(ARG_PARAM_TITLE, title);
+        args.putString(ARG_PARAM_IMAGE_URL, url);
         fragment.setArguments(args);
         return fragment;
     }

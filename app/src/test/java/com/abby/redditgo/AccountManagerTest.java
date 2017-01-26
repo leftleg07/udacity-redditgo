@@ -140,7 +140,7 @@ public class AccountManagerTest extends RedditTest {
 
             // Reply to a comment
             this.newCommentId = account.reply(submission, replyText);
-            // Since only the ID is returned, test the fullname
+            // Since only the _ID is returned, test the fullname
             assertTrue(JrawUtils.isFullname("t1_" + newCommentId));
         } catch (ApiException e) {
             handlePostingQuota(e);

@@ -132,7 +132,8 @@ public class RedditApi {
         return reddit.me();
     }
 
-    public static Submission vote(Submission submission, VoteDirection voteDirection) throws ApiException {
+    public static Submission vote(String submissionId, VoteDirection voteDirection) throws ApiException {
+        Submission submission = reddit.getSubmission(submissionId);
         account.vote(submission, voteDirection);
         return reddit.getSubmission(submission.getId());
 

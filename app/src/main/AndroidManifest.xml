@@ -43,6 +43,11 @@
 
         <activity android:name=".ui.comment.CommentActivity" />
         <activity android:name=".ui.comment.CommentComposeActivity"></activity>
+
+        <provider
+            android:authorities="com.abby.redditgo.provider"
+            android:name=".data.generated.RedditgoProvider"
+            android:exported="true"/>
     </application>
 
 </manifest>

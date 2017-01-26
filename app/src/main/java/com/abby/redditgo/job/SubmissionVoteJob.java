@@ -26,13 +26,13 @@ public class SubmissionVoteJob extends Job {
 
 
     private final VoteDirection voteDirection;
-    private final Submission submission;
+    private final String submissionId;
 
-    public SubmissionVoteJob(Submission submission, VoteDirection voteDirection) {
+    public SubmissionVoteJob(String submissionId, VoteDirection voteDirection) {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
         super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()));
-        this.submission = submission;
+        this.submissionId = submissionId;
         this.voteDirection = voteDirection;
     }
 
@@ -55,7 +55,7 @@ public class SubmissionVoteJob extends Job {
     @Override
     public void onRun() throws Throwable {
         try {
-            Submission newItem = RedditApi.vote(submission, voteDirection);
+            Submission newItem = RedditApi.vote(submissionId, voteDirection);
             EventBus.getDefault().post(new VoteEvent(newItem));
         } catch (NetworkException e) {
             EventBus.getDefault().post(new SubmissionErrorEvent(e.getMessage()));
