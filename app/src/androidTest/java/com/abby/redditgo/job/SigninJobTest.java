@@ -4,7 +4,7 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
 import com.abby.redditgo.MockApplication;
-import com.abby.redditgo.event.SigninEvent;
+import com.abby.redditgo.event.LoginEvent;
 import com.birbit.android.jobqueue.JobManager;
 
 import org.greenrobot.eventbus.EventBus;
@@ -42,7 +42,7 @@ public class SigninJobTest {
     }
 
     @Subscribe
-    public void onSigninEvent(SigninEvent event) {
+    public void onSigninEvent(LoginEvent event) {
         signal.countDown();
     }
 

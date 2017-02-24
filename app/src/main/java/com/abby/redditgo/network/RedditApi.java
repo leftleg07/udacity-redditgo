@@ -65,7 +65,7 @@ public class RedditApi {
         return reddit.isAuthenticated() && reddit.hasActiveUserContext();
     }
 
-    public static String signIn(String username, String password) {
+    public static String login(String username, String password) {
         String clientId = BuildConfig.REDDIT_SCRIPT_CLIENT_ID;
         String clientSecret = BuildConfig.REDDIT_SCRIPT_CLIENT_SECRET;
 
@@ -140,7 +140,7 @@ public class RedditApi {
     }
 
     /**
-     * comment api
+     * reply api
      */
     public static CommentNode comments(String submissionId, CommentSort sort) throws NetworkException {
         SubmissionRequest request = new SubmissionRequest.Builder(submissionId).sort(sort).build();

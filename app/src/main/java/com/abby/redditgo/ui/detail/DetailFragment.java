@@ -64,14 +64,14 @@ public class DetailFragment extends Fragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param param1 Parameter 1.
+     * @param uri Parameter 1.
      * @return A new instance of fragment DetailFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static DetailFragment newInstance(Uri param1) {
+    public static DetailFragment newInstance(Uri uri) {
         DetailFragment fragment = new DetailFragment();
         Bundle args = new Bundle();
-        args.putParcelable(ARG_DETAIL_PARAM, param1);
+        args.putParcelable(ARG_DETAIL_PARAM, uri);
         fragment.setArguments(args);
         return fragment;
     }

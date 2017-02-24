@@ -3,8 +3,7 @@ package com.abby.redditgo.job;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.abby.redditgo.event.CommentErrorEvent;
-import com.abby.redditgo.event.CommentRefreshEvent;
+import com.abby.redditgo.event.CommentComposeEvent;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.Job;
 import com.birbit.android.jobqueue.Params;
@@ -37,11 +36,11 @@ public class CommentReplySubmissionJob extends Job {
     public void onRun() throws Throwable {
         try {
             RedditApi.replySubmission(submissionId, replyText);
-            EventBus.getDefault().post(new CommentRefreshEvent());
+            EventBus.getDefault().post(new CommentComposeEvent(null));
         } catch (ApiException e) {
-            EventBus.getDefault().post(new CommentErrorEvent(e.getMessage()));
+            EventBus.getDefault().post(new CommentComposeEvent(e.getMessage()));
         } catch (NetworkException e) {
-            EventBus.getDefault().post(new CommentErrorEvent(e.getMessage()));
+            EventBus.getDefault().post(new CommentComposeEvent(e.getMessage()));
         }
 
     }

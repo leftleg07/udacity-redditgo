@@ -1,5 +1,6 @@
 package com.abby.redditgo.data;
 
+import net.simonvt.schematic.annotation.AutoIncrement;
 import net.simonvt.schematic.annotation.DataType;
 import net.simonvt.schematic.annotation.PrimaryKey;
 
@@ -11,9 +12,16 @@ import static net.simonvt.schematic.annotation.DataType.Type.TEXT;
  */
 
 public interface SubmissionColumn {
+    @DataType(INTEGER)
     @PrimaryKey
+    @AutoIncrement
+    String _ID = "_id";
+    @DataType(INTEGER)
+    String RANK = "rank";
     @DataType(TEXT)
-    String ID = "_id";
+    String ID = "submission_id";
+    @DataType(TEXT)
+    String SORTING = "sorting";
     @DataType(TEXT)
     String POST_HINT = "post_hint";
     @DataType(TEXT)

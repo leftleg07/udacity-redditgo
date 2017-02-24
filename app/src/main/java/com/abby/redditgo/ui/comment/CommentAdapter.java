@@ -36,7 +36,8 @@ import butterknife.BindDimen;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-import static com.abby.redditgo.ui.comment.CommentComposeActivity.EXTRA_COMMENT_FULLNAME;
+import static com.abby.redditgo.ui.comment.ComposeCommentActivity.EXTRA_COMMENT_ID;
+import static com.abby.redditgo.ui.comment.ComposeCommentActivity.EXTRA_TITLE;
 import static net.dean.jraw.models.VoteDirection.DOWNVOTE;
 import static net.dean.jraw.models.VoteDirection.UPVOTE;
 
@@ -222,8 +223,9 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
                     @Override
                     public void onClick(View v) {
                         if (RedditApi.isAuthorized()) {
-                            Intent intent = new Intent(mContext, CommentComposeActivity.class);
-                            intent.putExtra(EXTRA_COMMENT_FULLNAME, comment.getFullName());
+                            Intent intent = new Intent(mContext, ComposeCommentActivity.class);
+                            intent.putExtra(EXTRA_COMMENT_ID, comment.getFullName());
+                            intent.putExtra(EXTRA_TITLE, comment.getBody());
                             ContextCompat.startActivity(mContext, intent, null);
                         } else {
                             EventBus.getDefault().post(new AttemptLoginEvent());

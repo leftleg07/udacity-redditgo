@@ -43,10 +43,10 @@ public class SubmissionRequestTest extends RedditTest {
 
     @Test
     public void testFocus() {
-        // Change the focused comment
+        // Change the focused reply
         request.focus(FOCUS_COMMENT_ID);
         s = get();
-        // The top level comment should be the focused one
+        // The top level reply should be the focused one
         assertEquals(s.getComments().get(0).getComment().getId(), FOCUS_COMMENT_ID);
     }
 
@@ -56,7 +56,7 @@ public class SubmissionRequestTest extends RedditTest {
         request.focus(FOCUS_COMMENT_ID);
         request.context(3);
         s = get();
-        // The top level comment should be a parent of the focused one
+        // The top level reply should be a parent of the focused one
         assertNotEquals(s.getComments().get(0).getComment().getId(), FOCUS_COMMENT_ID);
     }
 

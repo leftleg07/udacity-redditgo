@@ -1,19 +1,25 @@
 package com.abby.redditgo.ui.main;
 
 import android.app.LoaderManager;
+import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.OperationApplicationException;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.StringRes;
+import android.os.RemoteException;
 import android.support.design.widget.NavigationView;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
@@ -22,11 +28,12 @@ import android.widget.TextView;
 
 import com.abby.redditgo.R;
 import com.abby.redditgo.data.RedditgoProvider;
+import com.abby.redditgo.data.SubmissionColumn;
 import com.abby.redditgo.data.SubredditColumn;
 import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.event.AccountEvent;
-import com.abby.redditgo.event.RefreshShowEvent;
-import com.abby.redditgo.event.SigninEvent;
+import com.abby.redditgo.event.LoginEvent;
+import com.abby.redditgo.event.VoteEvent;
 import com.abby.redditgo.job.AccountJob;
 import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.job.SubmissionFetchJob;
@@ -44,6 +51,8 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.util.ArrayList;
+
 import javax.inject.Inject;
 
 import butterknife.BindView;
@@ -54,9 +63,9 @@ import butterknife.ButterKnife;
 
 public class MainActivity extends BaseActivity implements MainFragment.OnFragmentInteractionListener, LoaderManager.LoaderCallbacks<Cursor> {
     private static final int SUBREDDIT_MENU_INDEX = 2;
-    private static final String KEY_SUBREDDIT = "_key_subreddit";
-    private static final String KEY_SORTING = "_key_sorting";
     private static final String KEY_TITLE = "_key_title";
+    private static final String KEY_SORTING = "_key_sorting";
+    private static final java.lang.String KEY_SUBREDDIT = "_key_subreddit";
 
     private static final int LOADER_ID_SUBREDDIT = 0;
 
@@ -81,8 +90,9 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
     TextView mTitleView;
     TextView mSubTitleView;
 
-    private String lastSubreddit = null;
-    private Sorting lastSorting = Sorting.HOT;
+    private String mLastSubreddit = null;
+    private Sorting mLastSorting = Sorting.HOT;
+    private int mLastFilterId = R.id.menu_hot;
 
 
     @Override
@@ -117,15 +127,20 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
         }
 
         if (savedInstanceState == null) {
-            fetchSubmission(null, Sorting.HOT);
             mTitleView.setText(R.string.side_front_page);
+            fetchSubmission(mLastSubreddit, mLastSorting);
         } else {
-            String subreddit = savedInstanceState.getString(KEY_SUBREDDIT);
-            Sorting sorting = (Sorting) savedInstanceState.getSerializable(KEY_SORTING);
             String title = savedInstanceState.getString(KEY_TITLE);
+            String sorting = savedInstanceState.getString(KEY_SORTING);
+            mLastSubreddit = savedInstanceState.getString(KEY_SUBREDDIT);
+            mLastSorting = Sorting.valueOf(sorting);
             mTitleView.setText(title);
-            fetchSubmission(subreddit, sorting);
+            MainFragment fragment = (MainFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
+            if(fragment != null) {
+                fragment.fetchSubmission(mLastSubreddit, mLastSorting);
+            }
         }
+
 
         getLoaderManager().initLoader(LOADER_ID_SUBREDDIT, null, this);
     }
@@ -135,13 +150,26 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
         component.inject(this);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.filter_menu, menu);
+        return true;
+    }
 
+
+    /*
+     * Listen for option item selections so that we receive a notification
+     * when the user requests a refresh by selecting the refresh action bar item.
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
                 // Open the navigation drawer when the home icon is selected from the mToolbar.
                 mDrawerLayout.openDrawer(GravityCompat.START);
+                return true;
+            case R.id.menu_filter:
+                showFilteringPopUpMenu();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -158,15 +186,49 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString(KEY_SUBREDDIT, lastSubreddit);
-        outState.putSerializable(KEY_SORTING, lastSorting);
         String title = (String) mTitleView.getText();
         outState.putString(KEY_TITLE, title);
+        outState.putString(KEY_SORTING, mLastSorting.name());
+        outState.putString(KEY_SUBREDDIT, mLastSubreddit);
     }
 
 
+    public void showFilteringPopUpMenu() {
+        PopupMenu popup = new PopupMenu(this, findViewById(R.id.menu_filter));
+        popup.getMenuInflater().inflate(R.menu.filter_submission, popup.getMenu());
+        popup.getMenu().findItem(mLastFilterId).setChecked(true);
+
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(MenuItem item) {
+                mLastFilterId = item.getItemId();
+                switch (mLastFilterId) {
+                    case R.id.menu_hot:
+                        mLastSorting = Sorting.HOT;
+                        break;
+                    case R.id.menu_new:
+                        mLastSorting = Sorting.NEW;
+                        break;
+                    case R.id.menu_rising:
+                        mLastSorting = Sorting.RISING;
+                        break;
+                    case R.id.menu_controversial:
+                        mLastSorting = Sorting.CONTROVERSIAL;
+                        break;
+                    case R.id.menu_top:
+                        mLastSorting = Sorting.TOP;
+                        break;
+                }
+                item.setChecked(true);
+                refresh();
+                return true;
+            }
+        });
+
+        popup.show();
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onSigninEvent(SigninEvent event) {
+    public void onLoginEvent(LoginEvent event) {
         if (RedditApi.isAuthorized()) {
             mLoginButton.setVisibility(View.GONE);
             mUserNameText.setText(event.username);
@@ -180,12 +242,71 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
         mUserNameText.setText(event.account.getFullName());
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onVoteEvent(VoteEvent event) throws RemoteException, OperationApplicationException {
+        String id = event.submission.getId();
+        String sorting = mLastSorting.name();
+
+        Uri existingUri = null;
+        if (mLastSubreddit == null) {
+            existingUri = RedditgoProvider.FrontPage.withId(sorting, id);
+        } else if (mLastSubreddit.equals("all")) {
+            existingUri = RedditgoProvider.All.withId(sorting, id);
+        } else {
+            existingUri = RedditgoProvider.Submission.withId(mLastSubreddit, sorting, id);
+        }
+
+        final ArrayList<ContentProviderOperation> batchOperations = new ArrayList<>();
+        batchOperations.add(ContentProviderOperation.newUpdate(existingUri)
+                .withValue(SubmissionColumn.POST_HINT, event.submission.getPostHint().name())
+                .withValue(SubmissionColumn.URL, event.submission.getUrl())
+                .withValue(SubmissionColumn.TITLE, event.submission.getTitle())
+                .withValue(SubmissionColumn.VOTE, event.submission.getVote().name())
+                .withValue(SubmissionColumn.CREATED_TIME, event.submission.getCreated().getTime())
+                .withValue(SubmissionColumn.AUTHOR, event.submission.getAuthor())
+                .withValue(SubmissionColumn.SUBREDDIT, event.submission.getSubredditName())
+                .withValue(SubmissionColumn.SCORE, event.submission.getScore())
+                .withValue(SubmissionColumn.NUM_COMMENTS, event.submission.getCommentCount())
+                .withValue(SubmissionColumn.THUMBNAIL, event.submission.getThumbnail())
+                .build());
+
+//        mContentResolver.applyBatch(RedditgoContract.AUTHORITY, batchOperations);
+        ContentValues values = new ContentValues();
+        values.put(SubmissionColumn.POST_HINT, event.submission.getPostHint().name());
+        values.put(SubmissionColumn.URL, event.submission.getUrl());
+        values.put(SubmissionColumn.TITLE, event.submission.getTitle());
+        values.put(SubmissionColumn.VOTE, event.submission.getVote().name());
+        values.put(SubmissionColumn.CREATED_TIME, event.submission.getCreated().getTime());
+        values.put(SubmissionColumn.AUTHOR, event.submission.getAuthor());
+        values.put(SubmissionColumn.SUBREDDIT, event.submission.getSubredditName());
+        values.put(SubmissionColumn.SCORE, event.submission.getScore());
+        values.put(SubmissionColumn.NUM_COMMENTS, event.submission.getCommentCount());
+        values.put(SubmissionColumn.THUMBNAIL, event.submission.getThumbnail());
+
+        int count = mContentResolver.update(existingUri, values, null, null);
+        if(count > 0) {
+            Uri contentUri = null;
+            if (mLastSubreddit == null) {
+                contentUri = RedditgoProvider.FrontPage.withSorting(sorting);
+            } else if (mLastSubreddit.equals("all")) {
+                contentUri = RedditgoProvider.All.withSorting(sorting);
+            } else {
+                contentUri = RedditgoProvider.Submission.withSubredditAndSorting(mLastSubreddit, sorting);
+            }
+            mContentResolver.notifyChange(contentUri, null, false);
+        }
+
+    }
+
     public void fetchSubmission(String subreddit, Sorting sorting) {
-        EventBus.getDefault().post(new RefreshShowEvent(subreddit, sorting));
-        lastSubreddit = subreddit;
-        lastSorting = sorting;
+        mLastSubreddit = subreddit;
+        mLastSorting = sorting;
         mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.SUBMISSION_FETCH_ID);
         mJobManager.addJobInBackground(new SubmissionFetchJob(subreddit, sorting));
+        MainFragment fragment = (MainFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
+        if(fragment != null) {
+            fragment.fetchSubmission(mLastSubreddit, mLastSorting);
+        }
     }
 
     private void setupDrawerContent(final NavigationView navigationView) {
@@ -206,9 +327,7 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
                             default:
                                 break;
                         }
-                        onSubTitleChange(R.string.filter_hot);
-                        // Close the navigation drawer when an item is selected.
-//                        menuItem.setChecked(true);
+                        mLastSorting = Sorting.HOT;
                         mDrawerLayout.closeDrawers();
                         return true;
                     }
@@ -222,34 +341,10 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
         }
     }
 
-    @Override
-    public void onSubTitleChange(@StringRes int resid) {
-        mSubTitleView.setText(resid);
-        Sorting sorting = Sorting.HOT;
-        switch (resid) {
-            case R.string.filter_hot:
-                sorting = Sorting.HOT;
-                break;
-            case R.string.filter_new:
-                sorting = Sorting.NEW;
-                break;
-            case R.string.filter_rising:
-                sorting = Sorting.RISING;
-                break;
-            case R.string.filter_controversial:
-                sorting = Sorting.CONTROVERSIAL;
-                break;
-            case R.string.filter_top:
-                sorting = Sorting.TOP;
-                break;
-        }
-
-        fetchSubmission(lastSubreddit, sorting);
-    }
 
     @Override
     public void refresh() {
-        fetchSubmission(lastSubreddit, lastSorting);
+        fetchSubmission(mLastSubreddit, mLastSorting);
     }
 
 

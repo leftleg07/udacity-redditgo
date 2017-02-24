@@ -5,21 +5,16 @@ import android.support.test.runner.AndroidJUnit4;
 
 import com.abby.redditgo.MockApplication;
 import com.abby.redditgo.event.CommentEvent;
-import com.abby.redditgo.event.SubmissionEvent;
 import com.abby.redditgo.job.CommentFetchJob;
-import com.abby.redditgo.job.JobId;
 import com.abby.redditgo.job.SubmissionFetchJob;
 import com.abby.redditgo.model.MyComment;
 import com.birbit.android.jobqueue.JobManager;
-import com.birbit.android.jobqueue.TagConstraint;
 import com.google.common.truth.Truth;
-import com.orhanobut.logger.Logger;
 
 import net.dean.jraw.auth.AuthenticationManager;
 import net.dean.jraw.auth.AuthenticationState;
 import net.dean.jraw.models.CommentNode;
 import net.dean.jraw.models.CommentSort;
-import net.dean.jraw.models.Submission;
 import net.dean.jraw.paginators.Sorting;
 
 import org.greenrobot.eventbus.EventBus;
@@ -77,15 +72,6 @@ public class RedditApiTest {
         mJobManager.addJobInBackground(new SubmissionFetchJob(null, Sorting.HOT));
         mSignal.await();
 
-    }
-
-    @Subscribe
-    public void onSubmissionEvent(SubmissionEvent event) {
-        mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.SUBMISSION_FETCH_ID);
-        for (Submission submission : event.submissions) {
-            Logger.i(submission.getTitle());
-        }
-        mSignal.countDown();
     }
 
     @Test

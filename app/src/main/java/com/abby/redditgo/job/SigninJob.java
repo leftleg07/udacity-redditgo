@@ -3,7 +3,7 @@ package com.abby.redditgo.job;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.abby.redditgo.event.SigninEvent;
+import com.abby.redditgo.event.LoginEvent;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.Job;
 import com.birbit.android.jobqueue.Params;
@@ -49,8 +49,8 @@ public class SigninJob extends Job {
     @Override
     public void onRun() throws Throwable {
 
-        String name = RedditApi.signIn(username, password);
-        EventBus.getDefault().post(new SigninEvent(name));
+        String name = RedditApi.login(username, password);
+        EventBus.getDefault().post(new LoginEvent(name));
 
     }
 

@@ -14,7 +14,6 @@ import com.abby.redditgo.data.RedditgoProvider;
 import com.abby.redditgo.data.SubmissionColumn;
 import com.abby.redditgo.di.ApplicationComponent;
 import com.abby.redditgo.event.SubmissionErrorEvent;
-import com.abby.redditgo.event.SubmissionEvent;
 import com.abby.redditgo.network.RedditApi;
 import com.birbit.android.jobqueue.Params;
 import com.birbit.android.jobqueue.RetryConstraint;
@@ -40,6 +39,9 @@ import javax.inject.Inject;
 
 import dagger.internal.Preconditions;
 
+import static com.abby.redditgo.job.SubmissionFetchJob.FetchSubreddit.ALL;
+import static com.abby.redditgo.job.SubmissionFetchJob.FetchSubreddit.FRONT_PAGE;
+import static com.abby.redditgo.job.SubmissionFetchJob.FetchSubreddit.OTHER;
 import static net.dean.jraw.auth.AuthenticationState.NONE;
 
 /**
@@ -47,6 +49,17 @@ import static net.dean.jraw.auth.AuthenticationState.NONE;
  */
 
 public class SubmissionFetchJob extends BaseJob {
+
+    public enum FetchSubreddit {
+        FRONT_PAGE,
+        ALL,
+        OTHER,
+    }
+
+    ;
+
+
+    private final FetchSubreddit mFetchSubreddit;
     private final String mSubreddit;
     private final Sorting mSorting;
 
@@ -67,6 +80,15 @@ public class SubmissionFetchJob extends BaseJob {
         // This job requires network connectivity,
         // and should be persisted in case the application exits before job is completed.
         super(new Params(Priority.MID).requireNetwork().singleInstanceBy(UUID.randomUUID().toString()).addTags(JobId.SUBMISSION_FETCH_ID));
+
+        if (subreddit == null) {
+            this.mFetchSubreddit = FRONT_PAGE;
+        } else if (subreddit.equals("all")) {
+            this.mFetchSubreddit = ALL;
+        } else {
+            this.mFetchSubreddit = OTHER;
+        }
+
         this.mSubreddit = subreddit;
         this.mSorting = sorting;
     }
@@ -97,6 +119,8 @@ public class SubmissionFetchJob extends BaseJob {
             }
 
             RedditClient reddit = AuthenticationManager.get().getRedditClient();
+
+
             SubredditPaginator paginator = new SubredditPaginator(reddit, mSubreddit);
             paginator.setSorting(mSorting);
             while (paginator.hasNext()) {
@@ -113,7 +137,6 @@ public class SubmissionFetchJob extends BaseJob {
 
                 // front page, all
                 updateSubmissionTable(submissions, paginator.getPageIndex());
-                EventBus.getDefault().post(new SubmissionEvent(submissions, mSorting, paginator.getPageIndex()));
             }
         } catch (NetworkException e) {
             EventBus.getDefault().post(new SubmissionErrorEvent(e.getMessage()));
@@ -121,13 +144,25 @@ public class SubmissionFetchJob extends BaseJob {
 
     }
 
+    private int rank = 0;
+
+    static class RankSubmission {
+        final Submission submission;
+        final int rank;
+
+        RankSubmission(Submission submission, int rank) {
+            this.submission = submission;
+            this.rank = rank;
+        }
+    }
+
     private void updateSubmissionTable(List<Submission> submissions, int pageIndex) {
         final ArrayList<ContentProviderOperation> batchOperations = new ArrayList<>();
 
         // Build hash table of incoming entries
-        final HashMap<String, Submission> entryMap = new HashMap<>();
+        final HashMap<String, RankSubmission> entryMap = new HashMap<>();
         for (Submission e : submissions) {
-            entryMap.put(e.getId(), e);
+            entryMap.put(e.getId(), new RankSubmission(e, rank++));
         }
 
         Cursor cursor = mContentResolver.query(contentUri(), null, null, null, null);
@@ -136,24 +171,37 @@ public class SubmissionFetchJob extends BaseJob {
         Logger.i("Found " + cursor.getCount() + " local entries. Computing merge solution...");
         while (cursor.moveToNext()) {
             String id = cursor.getString(cursor.getColumnIndex(SubmissionColumn.ID));
-            Submission match = entryMap.get(id);
+            RankSubmission match = entryMap.get(id);
             if (match != null) {
                 // Entry exists. Remove from entry map to prevent insert later.
                 entryMap.remove(id);
                 // update
+
+                String title = cursor.getString(cursor.getColumnIndex(SubmissionColumn.TITLE));
+                String vote = cursor.getString(cursor.getColumnIndex(SubmissionColumn.VOTE));
+                int score = cursor.getInt(cursor.getColumnIndex(SubmissionColumn.SCORE));
+                int count = cursor.getInt(cursor.getColumnIndex(SubmissionColumn.NUM_COMMENTS));
+                int rank = cursor.getInt(cursor.getColumnIndex(SubmissionColumn.RANK));
                 Uri existingUri = withId(id);
-                Logger.i("Scheduling update: " + existingUri);
-                batchOperations.add(ContentProviderOperation.newUpdate(existingUri)
-                        .withValue(SubmissionColumn.POST_HINT, match.getPostHint().name())
-                        .withValue(SubmissionColumn.URL, match.getUrl())
-                        .withValue(SubmissionColumn.TITLE, match.getTitle())
-                        .withValue(SubmissionColumn.VOTE, match.getVote().name())
-                        .withValue(SubmissionColumn.CREATED_TIME, match.getCreated().getTime())
-                        .withValue(SubmissionColumn.AUTHOR, match.getAuthor())
-                        .withValue(SubmissionColumn.SUBREDDIT, match.getSubredditName())
-                        .withValue(SubmissionColumn.SCORE, match.getScore())
-                        .withValue(SubmissionColumn.NUM_COMMENTS, match.getCommentCount())
-                        .build());
+                Submission submission = match.submission;
+                if (rank != match.rank || !title.equals(submission.getTitle()) || !vote.equals(submission.getVote().name()) || score != submission.getScore() || count != submission.getCommentCount()) {
+                    Logger.i("Scheduling update: " + existingUri);
+                    batchOperations.add(ContentProviderOperation.newUpdate(existingUri)
+                            .withValue(SubmissionColumn.RANK, match.rank)
+                            .withValue(SubmissionColumn.POST_HINT, submission.getPostHint().name())
+                            .withValue(SubmissionColumn.URL, submission.getUrl())
+                            .withValue(SubmissionColumn.TITLE, submission.getTitle())
+                            .withValue(SubmissionColumn.VOTE, submission.getVote().name())
+                            .withValue(SubmissionColumn.CREATED_TIME, submission.getCreated().getTime())
+                            .withValue(SubmissionColumn.AUTHOR, submission.getAuthor())
+                            .withValue(SubmissionColumn.SUBREDDIT, submission.getSubredditName())
+                            .withValue(SubmissionColumn.SCORE, submission.getScore())
+                            .withValue(SubmissionColumn.NUM_COMMENTS, submission.getCommentCount())
+                            .withValue(SubmissionColumn.THUMBNAIL, submission.getThumbnail())
+                            .build());
+                } else {
+                    Logger.i("No action: " + existingUri);
+                }
             } else {
                 // delete
                 Uri deleteUri = withId(id);
@@ -166,19 +214,23 @@ public class SubmissionFetchJob extends BaseJob {
 
         cursor.close();
 
-        for (Submission entry : entryMap.values()) {
-            Logger.i("Scheduling insert: entry_id=" + entry.getId());
+        for (RankSubmission entry : entryMap.values()) {
+            Submission submission = entry.submission;
+            Logger.i("Scheduling insert: entry_id=" + submission.getId());
             batchOperations.add(ContentProviderOperation.newInsert(contentUri())
-                    .withValue(SubmissionColumn.ID, entry.getId())
-                    .withValue(SubmissionColumn.POST_HINT, entry.getPostHint().name())
-                    .withValue(SubmissionColumn.URL, entry.getUrl())
-                    .withValue(SubmissionColumn.TITLE, entry.getTitle())
-                    .withValue(SubmissionColumn.VOTE, entry.getVote().name())
-                    .withValue(SubmissionColumn.CREATED_TIME, entry.getCreated().getTime())
-                    .withValue(SubmissionColumn.AUTHOR, entry.getAuthor())
-                    .withValue(SubmissionColumn.SUBREDDIT, entry.getSubredditName())
-                    .withValue(SubmissionColumn.SCORE, entry.getScore())
-                    .withValue(SubmissionColumn.NUM_COMMENTS, entry.getCommentCount())
+                    .withValue(SubmissionColumn.ID, submission.getId())
+                    .withValue(SubmissionColumn.SORTING, mSorting.name())
+                    .withValue(SubmissionColumn.RANK, entry.rank)
+                    .withValue(SubmissionColumn.POST_HINT, submission.getPostHint().name())
+                    .withValue(SubmissionColumn.URL, submission.getUrl())
+                    .withValue(SubmissionColumn.TITLE, submission.getTitle())
+                    .withValue(SubmissionColumn.VOTE, submission.getVote().name())
+                    .withValue(SubmissionColumn.CREATED_TIME, submission.getCreated().getTime())
+                    .withValue(SubmissionColumn.AUTHOR, submission.getAuthor())
+                    .withValue(SubmissionColumn.SUBREDDIT, submission.getSubredditName())
+                    .withValue(SubmissionColumn.SCORE, submission.getScore())
+                    .withValue(SubmissionColumn.NUM_COMMENTS, submission.getCommentCount())
+                    .withValue(SubmissionColumn.THUMBNAIL, submission.getThumbnail())
                     .build());
 
         }
@@ -197,33 +249,25 @@ public class SubmissionFetchJob extends BaseJob {
     }
 
     Uri contentUri() {
-        switch (mSorting) {
-            case HOT:
-                return mSubreddit == null ? RedditgoProvider.FrontPageHot.CONTENT_URI : (mSubreddit.equals("all") ? RedditgoProvider.AllHot.CONTENT_URI : RedditgoProvider.SubmissionHot.withSubreddit(mSubreddit));
-            case NEW:
-                return mSubreddit == null ? RedditgoProvider.FrontPageNew.CONTENT_URI : (mSubreddit.equals("all") ? RedditgoProvider.AllNew.CONTENT_URI : RedditgoProvider.SubmissionNew.withSubreddit(mSubreddit));
-            case RISING:
-                return mSubreddit == null ? RedditgoProvider.FrontPageRising.CONTENT_URI : (mSubreddit.equals("all") ? RedditgoProvider.AllRising.CONTENT_URI : RedditgoProvider.SubmissionRising.withSubreddit(mSubreddit));
-            case CONTROVERSIAL:
-                return mSubreddit == null ? RedditgoProvider.FrontPageControversal.CONTENT_URI : (mSubreddit.equals("all") ? RedditgoProvider.AllControversal.CONTENT_URI : RedditgoProvider.SubmissionControversal.withSubreddit(mSubreddit));
-            case TOP:
-                return mSubreddit == null ? RedditgoProvider.FrontPageTop.CONTENT_URI : (mSubreddit.equals("all") ? RedditgoProvider.AllTop.CONTENT_URI : RedditgoProvider.SubmissionTop.withSubreddit(mSubreddit));
+        switch (mFetchSubreddit) {
+            case FRONT_PAGE:
+                return RedditgoProvider.FrontPage.withSorting(mSorting.name());
+            case ALL:
+                return RedditgoProvider.All.withSorting(mSorting.name());
+            case OTHER:
+                return RedditgoProvider.Submission.withSubredditAndSorting(mSubreddit, mSorting.name());
         }
         return null;
     }
 
     Uri withId(String id) {
-        switch (mSorting) {
-            case HOT:
-                return mSubreddit == null ? RedditgoProvider.FrontPageHot.withId(id) : (mSubreddit.equals("all") ? RedditgoProvider.AllHot.withId(id) : RedditgoProvider.SubmissionHot.withId(id));
-            case NEW:
-                return mSubreddit == null ? RedditgoProvider.FrontPageNew.withId(id) : (mSubreddit.equals("all") ? RedditgoProvider.AllNew.withId(id) : RedditgoProvider.SubmissionNew.withId(id));
-            case RISING:
-                return mSubreddit == null ? RedditgoProvider.FrontPageRising.withId(id) : (mSubreddit.equals("all") ? RedditgoProvider.AllRising.withId(id) : RedditgoProvider.SubmissionRising.withId(id));
-            case CONTROVERSIAL:
-                return mSubreddit == null ? RedditgoProvider.FrontPageControversal.withId(id) : (mSubreddit.equals("all") ? RedditgoProvider.AllControversal.withId(id) : RedditgoProvider.SubmissionControversal.withId(id));
-            case TOP:
-                return mSubreddit == null ? RedditgoProvider.FrontPageTop.withId(id) : (mSubreddit.equals("all") ? RedditgoProvider.AllTop.withId(id) : RedditgoProvider.SubmissionTop.withId(id));
+        switch (mFetchSubreddit) {
+            case FRONT_PAGE:
+                return RedditgoProvider.FrontPage.withId(mSorting.name(), id);
+            case ALL:
+                return RedditgoProvider.All.withId(mSorting.name(), id);
+            case OTHER:
+                return RedditgoProvider.Submission.withId(mSubreddit, mSorting.name(), id);
         }
         return null;
     }

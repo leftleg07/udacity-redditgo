@@ -8,7 +8,7 @@ import android.support.test.runner.AndroidJUnit4;
 
 import com.abby.redditgo.MockApplication;
 import com.abby.redditgo.data.RedditgoProvider;
-import com.abby.redditgo.event.SigninEvent;
+import com.abby.redditgo.event.LoginEvent;
 import com.birbit.android.jobqueue.JobManager;
 
 import org.greenrobot.eventbus.EventBus;
@@ -62,7 +62,7 @@ public class SubredditFetchJobTest {
     }
 
     @Subscribe
-    public void onSigninEvent(SigninEvent event) {
+    public void onSigninEvent(LoginEvent event) {
         mJobManager.addJobInBackground(new SubredditFetchJob());
     }
 

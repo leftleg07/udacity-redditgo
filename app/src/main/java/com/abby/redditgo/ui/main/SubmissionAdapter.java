@@ -1,8 +1,9 @@
 package com.abby.redditgo.ui.main;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -15,14 +16,18 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.R;
+import com.abby.redditgo.data.RedditgoProvider;
+import com.abby.redditgo.data.SubmissionColumn;
 import com.abby.redditgo.job.SubmissionVoteJob;
 import com.abby.redditgo.network.RedditApi;
+import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.ui.comment.CommentActivity;
-import com.abby.redditgo.ui.detail.DetailActivity;
 import com.abby.redditgo.ui.detail.ImageDialogFragment;
 import com.abby.redditgo.ui.login.LoginActivity;
+import com.abby.redditgo.util.CursorRecyclerViewAdapter;
+import com.abby.redditgo.util.CustomTabActivityHelper;
+import com.abby.redditgo.util.WebviewFallback;
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.birbit.android.jobqueue.JobManager;
@@ -36,8 +41,6 @@ import com.squareup.phrase.Phrase;
 import net.dean.jraw.models.Submission;
 import net.dean.jraw.models.VoteDirection;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
@@ -47,20 +50,236 @@ import butterknife.ButterKnife;
 
 import static android.content.Intent.EXTRA_SUBJECT;
 import static android.content.Intent.EXTRA_TEXT;
-import static com.abby.redditgo.ui.comment.CommentActivity.EXTRA_SUBMISSION_ID;
+import static net.dean.jraw.models.VoteDirection.DOWNVOTE;
+import static net.dean.jraw.models.VoteDirection.UPVOTE;
 
-public class SubmissionAdapter extends RecyclerView.Adapter<SubmissionAdapter.ViewHolder> {
-    private List<Submission> mSubmissions;
+/**
+ * Created by gsshop on 2017. 1. 20..
+ */
 
+public class SubmissionAdapter extends CursorRecyclerViewAdapter<SubmissionAdapter.ViewHolder> {
+
+    private final View mEmptyView;
     @Inject
     JobManager mJobManager;
 
     private final Context mContext;
+    private String mSubreddit;
 
-    public SubmissionAdapter(Context context) {
+    public SubmissionAdapter(Context context, Cursor cursor, View emptyView) {
+        super(context, cursor);
         ((BaseActivity) context).getComponent().inject(this);
         this.mContext = context;
+        this.mEmptyView = emptyView;
     }
+
+    @Override
+    public Cursor swapCursor(Cursor newCursor) {
+        Cursor cursor = super.swapCursor(newCursor);
+        mEmptyView.setVisibility(getItemCount() == 0 ? View.VISIBLE : View.GONE);
+        return cursor;
+    }
+
+    @Override
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        // create a new view
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_submission, parent, false);
+        // set the view's size, margins, paddings and layout parameters
+        ViewHolder vh = new ViewHolder(v);
+        return vh;
+    }
+
+    @Override
+    public void onBindViewHolder(ViewHolder holder, Cursor cursor) {
+        final String id = cursor.getString(cursor.getColumnIndex(SubmissionColumn.ID));
+        String temp = cursor.getString(cursor.getColumnIndex(SubmissionColumn.POST_HINT));
+        final Submission.PostHint postHint = Submission.PostHint.valueOf(temp);
+        final String url = cursor.getString(cursor.getColumnIndex(SubmissionColumn.URL));
+        final String title = cursor.getString(cursor.getColumnIndex(SubmissionColumn.TITLE));
+        temp = cursor.getString(cursor.getColumnIndex(SubmissionColumn.VOTE));
+        final VoteDirection vote = VoteDirection.valueOf(temp);
+        long createdTime = cursor.getLong(cursor.getColumnIndex(SubmissionColumn.CREATED_TIME));
+        String author = cursor.getString(cursor.getColumnIndex(SubmissionColumn.AUTHOR));
+        String subreddit = cursor.getString(cursor.getColumnIndex(SubmissionColumn.SUBREDDIT));
+        final String sorting  = cursor.getString(cursor.getColumnIndex(SubmissionColumn.SORTING));
+        long score = cursor.getLong(cursor.getColumnIndex(SubmissionColumn.SCORE));
+        long numComments = cursor.getLong(cursor.getColumnIndex(SubmissionColumn.NUM_COMMENTS));
+        String thumbnail = cursor.getString(cursor.getColumnIndex(SubmissionColumn.THUMBNAIL));
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Logger.i("hint: " + postHint + ", link: " + url);
+                Intent intent;
+                switch (postHint) {
+                    case IMAGE:
+                        ImageDialogFragment dialog = ImageDialogFragment.newInstance(title, url);
+                        dialog.show(((AppCompatActivity) mContext).getSupportFragmentManager(), ImageDialogFragment.class.getSimpleName());
+                        break;
+                    case VIDEO:
+                        YouTubeInitializationResult result = YouTubeApiServiceUtil.isYouTubeApiServiceAvailable(mContext);
+                        if (result == YouTubeInitializationResult.SUCCESS && url.contains("youtu")) {
+                            intent = YouTubeIntents.createPlayVideoIntentWithOptions(mContext, "", true, false);
+                            intent.setData(Uri.parse(url));
+                            ContextCompat.startActivity(mContext, intent, null);
+                            break;
+                        }
+                    case LINK:
+                    default:
+                        CustomTabActivityHelper.openCustomTab(
+                                (Activity) mContext, Uri.parse(url), title, new WebviewFallback());
+                }
+            }
+        });
+
+        holder.mUpButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (RedditApi.isAuthorized()) {
+                    if (vote == UPVOTE) {
+                        mJobManager.addJobInBackground(new SubmissionVoteJob(id, VoteDirection.NO_VOTE));
+                    } else {
+                        mJobManager.addJobInBackground(new SubmissionVoteJob(id, UPVOTE));
+                    }
+                } else {
+                    new MaterialDialog.Builder(mContext)
+                            .title(R.string.title_activity_login)
+                            .positiveText(R.string.action_sign_in)
+                            .negativeText(android.R.string.no)
+                            .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    ContextCompat.startActivity(mContext, new Intent(mContext, LoginActivity.class), null);
+                                }
+                            }).show();
+
+                }
+            }
+        });
+
+        holder.mDownButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (RedditApi.isAuthorized()) {
+                    if (vote == DOWNVOTE) {
+                        mJobManager.addJobInBackground(new SubmissionVoteJob(id, VoteDirection.NO_VOTE));
+                    } else {
+                        mJobManager.addJobInBackground(new SubmissionVoteJob(id, DOWNVOTE));
+                    }
+                } else {
+                    new MaterialDialog.Builder(mContext)
+                            .title(R.string.title_activity_login)
+                            .positiveText(R.string.action_sign_in)
+                            .negativeText(android.R.string.no)
+                            .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    ContextCompat.startActivity(mContext, new Intent(mContext, LoginActivity.class), null);
+                                }
+                            }).show();
+                }
+            }
+        });
+
+        holder.mTitleText.setText(title);
+
+        long hours = TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - createdTime);
+        holder.mSubmitText.setText(Phrase.from(mContext, R.string.submit).put("hour", String.valueOf(hours)).put("author", author).put("subreddit", subreddit).format());
+
+        holder.mScoreText.setText(String.valueOf(score));
+        holder.mCommentsText.setText(String.valueOf(numComments));
+        holder.mCommnetButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Uri uri;
+                if(mSubreddit == null) {
+                    uri = RedditgoProvider.FrontPage.withId(sorting, id);
+                } else if(mSubreddit.equals("all")) {
+                    uri = RedditgoProvider.All.withId(sorting, id);
+                } else {
+                    uri = RedditgoProvider.Submission.withId(mSubreddit, sorting, id);
+                }
+                Intent intent = new Intent(mContext, CommentActivity.class);
+                intent.setData(uri);
+                ContextCompat.startActivity(mContext, intent, null);
+            }
+        });
+
+        holder.mShareButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent sharingIntent = new Intent(Intent.ACTION_SEND);
+                sharingIntent.setType("text/plain");
+                sharingIntent.putExtra(EXTRA_SUBJECT, title);
+                sharingIntent.putExtra(EXTRA_TEXT, url);
+                ContextCompat.startActivity(mContext, Intent.createChooser(sharingIntent, "Share URL"), null);
+            }
+        });
+
+
+        if (thumbnail == null) {
+            holder.mIconImage.setVisibility(View.GONE);
+            switch (postHint) {
+                case SELF:
+                    holder.mThumbnailImage.setImageResource(R.drawable.img_self);
+                    break;
+                case VIDEO:
+                    holder.mThumbnailImage.setImageResource(R.drawable.img_video);
+                    break;
+                case LINK:
+                    holder.mThumbnailImage.setImageResource(R.drawable.img_link);
+                    break;
+                case UNKNOWN:
+                    holder.mThumbnailImage.setImageResource(R.drawable.img_unknown);
+                    break;
+                case IMAGE:
+                    holder.mThumbnailImage.setImageResource(R.drawable.img_no);
+                    break;
+            }
+        } else {
+            holder.mIconImage.setVisibility(View.VISIBLE);
+            switch (postHint) {
+                case SELF:
+                    holder.mIconImage.setImageResource(R.drawable.ic_account_circle_white_48dp);
+                    break;
+                case VIDEO:
+                    holder.mIconImage.setImageResource(R.drawable.ic_play_circle_outline_white_48dp);
+                    break;
+                case LINK:
+                    holder.mIconImage.setImageResource(R.drawable.ic_mouse_white_48dp);
+                    break;
+                case UNKNOWN:
+                    holder.mIconImage.setImageResource(R.drawable.ic_sentiment_satisfied_white_48dp);
+                    break;
+                case IMAGE:
+                    holder.mIconImage.setImageResource(R.drawable.ic_image_white_48dp);
+                    break;
+            }
+            Glide.with(mContext).load(thumbnail).into(holder.mThumbnailImage);
+        }
+
+        switch (vote) {
+            case UPVOTE:
+                holder.mUpButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_up_highlight));
+                holder.mDownButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_down));
+                break;
+            case DOWNVOTE:
+                holder.mUpButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_up));
+                holder.mDownButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_down_highlight));
+                break;
+            default:
+                holder.mUpButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_up));
+                holder.mDownButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_down));
+
+        }
+
+    }
+
+    public void setSubreddit(String subreddit) {
+        this.mSubreddit = subreddit;
+    }
+
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -103,228 +322,4 @@ public class SubmissionAdapter extends RecyclerView.Adapter<SubmissionAdapter.Vi
             ButterKnife.bind(this, view);
         }
     }
-
-    // Provide a suitable constructor (depends on the kind of dataset)
-    public void setSubmissions(List<Submission> submissions) {
-        mSubmissions = new ArrayList<>();
-        mSubmissions.addAll(submissions);
-    }
-
-    public void addSubmissions(List<Submission> submissions) {
-        mSubmissions.addAll(submissions);
-    }
-
-    public List<Submission> getSubmissions() {
-        return mSubmissions;
-    }
-
-    // Create new views (invoked by the layout manager)
-    @Override
-    public SubmissionAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        // create a new view
-        View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_submission, parent, false);
-        // set the view's size, margins, paddings and layout parameters
-        ViewHolder vh = new ViewHolder(v);
-        return vh;
-    }
-
-    // Replace the contents of a view (invoked by the layout manager)
-    @Override
-    public void onBindViewHolder(final ViewHolder holder, int position) {
-        // - get element from your dataset at this position
-        // - replace the contents of the view with that element
-
-        // title - 타이틀
-        // thumbnail - 섬네일
-        // permalink - 코멘트 주소
-        // url - 링크
-        // score - 점수
-        // num_comments - 코멘트 갯수
-        // author - 작성자.
-        // subreddit - funny
-        // link_flair_text -
-        // selftext - 상세 내용.
-
-        final Submission submission = mSubmissions.get(position);
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Logger.i("hint: " + submission.getPostHint() + ", link: " + submission.getUrl());
-                Intent intent;
-                switch (submission.getPostHint()) {
-                    case IMAGE:
-                        ImageDialogFragment dialog = ImageDialogFragment.newInstance(submission.getTitle(), submission.getUrl());
-                        dialog.show(((AppCompatActivity) mContext).getSupportFragmentManager(), ImageDialogFragment.class.getSimpleName());
-                        break;
-                    case VIDEO:
-                        String url = submission.getUrl();
-                        YouTubeInitializationResult result = YouTubeApiServiceUtil.isYouTubeApiServiceAvailable(mContext);
-                        if (result == YouTubeInitializationResult.SUCCESS && url.contains("youtu")) {
-                            intent = YouTubeIntents.createPlayVideoIntentWithOptions(mContext, "", true, false);
-                            intent.setData(Uri.parse(url));
-                            ContextCompat.startActivity(mContext, intent, null);
-                            break;
-                        }
-                    case LINK:
-                    default:
-                        intent = new Intent(mContext, DetailActivity.class);
-                        intent.putExtra(DetailActivity.EXTRA_TITLE, submission.getTitle());
-                        intent.setData(Uri.parse(submission.getUrl()));
-                        ContextCompat.startActivity(mContext, intent, null);
-                }
-            }
-        });
-
-        holder.mUpButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (RedditApi.isAuthorized()) {
-                    if (submission.getVote() == VoteDirection.UPVOTE) {
-                        mJobManager.addJobInBackground(new SubmissionVoteJob(submission.getId(), VoteDirection.NO_VOTE));
-                    } else {
-                        mJobManager.addJobInBackground(new SubmissionVoteJob(submission.getId(), VoteDirection.UPVOTE));
-                    }
-                } else {
-                    new MaterialDialog.Builder(mContext)
-                            .title(R.string.title_activity_login)
-                            .positiveText(R.string.action_sign_in)
-                            .negativeText(android.R.string.no)
-                            .onPositive(new MaterialDialog.SingleButtonCallback() {
-                                @Override
-                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                    ContextCompat.startActivity(mContext, new Intent(mContext, LoginActivity.class), null);
-                                }
-                            }).show();
-
-                }
-            }
-        });
-
-        holder.mDownButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (RedditApi.isAuthorized()) {
-                    if (submission.getVote() == VoteDirection.DOWNVOTE) {
-                        mJobManager.addJobInBackground(new SubmissionVoteJob(submission.getId(), VoteDirection.NO_VOTE));
-                    } else {
-                        mJobManager.addJobInBackground(new SubmissionVoteJob(submission.getId(), VoteDirection.DOWNVOTE));
-                    }
-                } else {
-                    new MaterialDialog.Builder(mContext)
-                            .title(R.string.title_activity_login)
-                            .positiveText(R.string.action_sign_in)
-                            .negativeText(android.R.string.no)
-                            .onPositive(new MaterialDialog.SingleButtonCallback() {
-                                @Override
-                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                    ContextCompat.startActivity(mContext, new Intent(mContext, LoginActivity.class), null);
-                                }
-                            }).show();
-                }
-            }
-        });
-
-        holder.mTitleText.setText(submission.getTitle());
-
-        long hours = TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - submission.getCreated().getTime());
-        holder.mSubmitText.setText(Phrase.from(mContext, R.string.submit).put("hour", String.valueOf(hours)).put("author", submission.getAuthor()).put("subreddit", submission.getSubredditName()).format());
-
-        holder.mScoreText.setText(String.valueOf(submission.getScore()));
-        holder.mCommentsText.setText(String.valueOf(submission.getCommentCount()));
-        holder.mCommnetButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(mContext, CommentActivity.class);
-                intent.putExtra(EXTRA_SUBMISSION_ID, submission.getId());
-                ContextCompat.startActivity(mContext, intent, null);
-            }
-        });
-
-        holder.mShareButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent sharingIntent = new Intent(Intent.ACTION_SEND);
-                sharingIntent.setType("text/plain");
-                sharingIntent.putExtra(EXTRA_SUBJECT, submission.getTitle());
-                sharingIntent.putExtra(EXTRA_TEXT, submission.getUrl());
-                ContextCompat.startActivity(mContext, Intent.createChooser(sharingIntent, "Share URL"), null);
-            }
-        });
-
-
-        String thumbnail = submission.getThumbnail();
-        if (thumbnail == null) {
-            holder.mIconImage.setVisibility(View.GONE);
-            switch (submission.getPostHint()) {
-                case SELF:
-                    holder.mThumbnailImage.setImageResource(R.drawable.img_self);
-                    break;
-                case VIDEO:
-                    holder.mThumbnailImage.setImageResource(R.drawable.img_video);
-                    break;
-                case LINK:
-                    holder.mThumbnailImage.setImageResource(R.drawable.img_link);
-                    break;
-                case UNKNOWN:
-                    holder.mThumbnailImage.setImageResource(R.drawable.img_unknown);
-                    break;
-                case IMAGE:
-                    holder.mThumbnailImage.setImageResource(R.drawable.img_no);
-                    break;
-            }
-        } else {
-            holder.mIconImage.setVisibility(View.VISIBLE);
-            switch (submission.getPostHint()) {
-                case SELF:
-                    holder.mIconImage.setImageResource(R.drawable.ic_account_circle_white_48dp);
-                    break;
-                case VIDEO:
-                    holder.mIconImage.setImageResource(R.drawable.ic_play_circle_outline_white_48dp);
-                    break;
-                case LINK:
-                    holder.mIconImage.setImageResource(R.drawable.ic_mouse_white_48dp);
-                    break;
-                case UNKNOWN:
-                    holder.mIconImage.setImageResource(R.drawable.ic_sentiment_satisfied_white_48dp);
-                    break;
-                case IMAGE:
-                    holder.mIconImage.setImageResource(R.drawable.ic_image_white_48dp);
-                    break;
-            }
-            Glide.with(mContext).load(thumbnail).into(holder.mThumbnailImage);
-        }
-
-        switch (submission.getVote()) {
-            case UPVOTE:
-                holder.mUpButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_up_highlight));
-                holder.mDownButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_down));
-                break;
-            case DOWNVOTE:
-                holder.mUpButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_up));
-                holder.mDownButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_down_highlight));
-                break;
-            default:
-                holder.mUpButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_up));
-                holder.mDownButton.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_down));
-
-        }
-
-    }
-
-    // Return the size of your dataset (invoked by the layout manager)
-    @Override
-    public int getItemCount() {
-        if (mSubmissions != null) {
-            return mSubmissions.size();
-        }
-
-        return 0;
-    }
-
-    private boolean canResolveIntent(Intent intent) {
-        List<ResolveInfo> resolveInfo = mContext.getPackageManager().queryIntentActivities(intent, 0);
-        return resolveInfo != null && !resolveInfo.isEmpty();
-    }
 }
-

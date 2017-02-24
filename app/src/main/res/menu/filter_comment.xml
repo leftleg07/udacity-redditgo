@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:id="@+id/group"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/menu_hot"
+            android:title="@string/filter_hot" />
+        <item
+            android:id="@+id/menu_new"
+            android:title="@string/filter_new" />
+        <item
+            android:id="@+id/menu_top"
+            android:title="@string/filter_top" />
+        <item
+            android:id="@+id/menu_controversial"
+            android:title="@string/filter_controversial" />
+        <item
+            android:id="@+id/menu_old"
+            android:title="@string/filter_old" />
+        <item
+            android:id="@+id/menu_qa"
+            android:title="@string/filter_qa" />
+    </group>
+</menu>

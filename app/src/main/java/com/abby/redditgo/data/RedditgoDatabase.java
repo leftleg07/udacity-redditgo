@@ -18,29 +18,18 @@ public final class RedditgoDatabase {
     /**
      * submission
      */
-    @Table(SubmissionColumn.class) public static final String SUBMISSION_HOT = RedditgoContract.TABLE_NAME_SUBMISSION_HOT;
-    @Table(SubmissionColumn.class) public static final String SUBMISSION_NEW = RedditgoContract.TABLE_NAME_SUBMISSION_NEW;
-    @Table(SubmissionColumn.class) public static final String SUBMISSION_RISING = RedditgoContract.TABLE_NAME_SUBMISSION_RISING;
-    @Table(SubmissionColumn.class) public static final String SUBMISSION_CONTROVERSAL = RedditgoContract.TABLE_NAME_SUBMISSION_CONTROVERSAL;
-    @Table(SubmissionColumn.class) public static final String SUBMISSION_TOP = RedditgoContract.TABLE_NAME_SUBMISSION_TOP;
+    @Table(SubmissionColumn.class) public static final String SUBMISSION = RedditgoContract.TABLE_NAME_SUBMISSION;
 
     /**
      * front page
      */
-    @Table(SubmissionColumn.class) public static final String FRONT_PAGE_HOT = RedditgoContract.TABLE_NAME_FRONT_PAGE_HOT;
-    @Table(SubmissionColumn.class) public static final String FRONT_PAGE_NEW = RedditgoContract.TABLE_NAME_FRONT_PAGE_NEW;
-    @Table(SubmissionColumn.class) public static final String FRONT_PAGE_RISING = RedditgoContract.TABLE_NAME_FRONT_PAGE_RISING;
-    @Table(SubmissionColumn.class) public static final String FRONT_PAGE_CONTROVERSAL = RedditgoContract.TABLE_NAME_FRONT_PAGE_CONTROVERSAL;
-    @Table(SubmissionColumn.class) public static final String FRONT_PAGE_TOP = RedditgoContract.TABLE_NAME_FRONT_PAGE_TOP;
+    @Table(SubmissionColumn.class) public static final String FRONT_PAGE = RedditgoContract.TABLE_NAME_FRONT_PAGE;
+
 
     /**
      * all
      */
-    @Table(SubmissionColumn.class) public static final String ALL_HOT = RedditgoContract.TABLE_NAME_ALL_HOT;
-    @Table(SubmissionColumn.class) public static final String ALL_NEW = RedditgoContract.TABLE_NAME_ALL_NEW;
-    @Table(SubmissionColumn.class) public static final String ALL_RISING = RedditgoContract.TABLE_NAME_ALL_RISING;
-    @Table(SubmissionColumn.class) public static final String ALL_CONTROVERSAL = RedditgoContract.TABLE_NAME_ALL_CONTROVERSAL;
-    @Table(SubmissionColumn.class) public static final String ALL_TOP = RedditgoContract.TABLE_NAME_ALL_TOP;
+    @Table(SubmissionColumn.class) public static final String ALL = RedditgoContract.TABLE_NAME_ALL;
 
 
     /**
@@ -62,5 +51,5 @@ public final class RedditgoDatabase {
     }
 
 //    @ExecOnCreate
-//    public static final String EXEC_ON_CREATE = "SELECT * FROM " + FRONT_PAGE_HOT;
+//    public static final String EXEC_ON_CREATE = "SELECT * FROM " + FRONT_PAGE;
 }

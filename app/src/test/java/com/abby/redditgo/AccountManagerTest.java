@@ -138,7 +138,7 @@ public class AccountManagerTest extends RedditTest {
             String replyText = "" + epochMillis();
             Submission submission = reddit.getSubmission(SUBMISSION_ID);
 
-            // Reply to a comment
+            // Reply to a reply
             this.newCommentId = account.reply(submission, replyText);
             // Since only the _ID is returned, test the fullname
             assertTrue(JrawUtils.isFullname("t1_" + newCommentId));
@@ -177,7 +177,7 @@ public class AccountManagerTest extends RedditTest {
 
             for (CommentNode c : reddit.getSubmission(SUBMISSION_ID).getComments().walkTree()) {
                 if (c.getComment().getId().equals(newCommentId)) {
-                    fail("Found the (supposedly) deleted comment");
+                    fail("Found the (supposedly) deleted reply");
                 }
             }
         } catch (NetworkException | ApiException e) {
@@ -197,7 +197,7 @@ public class AccountManagerTest extends RedditTest {
             reddit.getSubmission(newSubmssionId);
         } catch (NetworkException e) {
             if (e.getResponse().getStatusCode() != 404) {
-                fail("Did not get a 404 when querying the deleted comment", e);
+                fail("Did not get a 404 when querying the deleted reply", e);
             }
         }
     }
@@ -246,7 +246,7 @@ public class AccountManagerTest extends RedditTest {
                 }
             }
 
-            fail("Did not find saved comment");
+            fail("Did not find saved reply");
 
         } catch (NetworkException | ApiException e) {
             handle(e);
@@ -262,10 +262,10 @@ public class AccountManagerTest extends RedditTest {
             UserContributionPaginator paginator = getPaginator("saved");
             List<Contribution> saved = paginator.next();
 
-            // Fail if we find the comment in the list
+            // Fail if we find the reply in the list
             for (Contribution s : saved) {
                 if (s.getId().equals(submission.getId())) {
-                    fail("Found the comment after it was unsaved");
+                    fail("Found the reply after it was unsaved");
                 }
             }
         } catch (NetworkException | ApiException e) {
@@ -289,7 +289,7 @@ public class AccountManagerTest extends RedditTest {
                 }
             }
 
-            fail("Did not find the comment in the hidden posts");
+            fail("Did not find the reply in the hidden posts");
         } catch (NetworkException | ApiException e) {
             handle(e);
         }
@@ -307,7 +307,7 @@ public class AccountManagerTest extends RedditTest {
             for (Contribution c : hidden) {
                 Submission s = (Submission) c;
                 if (s.getId().equals(submission.getId())) {
-                    fail("Found unhidden comment in hidden posts");
+                    fail("Found unhidden reply in hidden posts");
                 }
             }
         } catch (NetworkException | ApiException e) {
@@ -323,7 +323,7 @@ public class AccountManagerTest extends RedditTest {
 
             moderation.setNsfw(s, newVal);
 
-            // Reload the comment's data
+            // Reload the reply's data
             s = reddit.getSubmission(s.getId());
             assertTrue(s.isNsfw() == newVal);
         } catch (NetworkException | ApiException e) {
@@ -461,7 +461,7 @@ public class AccountManagerTest extends RedditTest {
             validateModel(breakdown);
 
             for (String subreddit : breakdown.getSummaries().keySet()) {
-                // Make sure the img_link and comment karma properties are not null
+                // Make sure the img_link and reply karma properties are not null
                 breakdown.getCommentKarma(subreddit);
                 breakdown.getLinkKarma(subreddit);
             }

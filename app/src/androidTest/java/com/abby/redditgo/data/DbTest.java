@@ -27,21 +27,9 @@ public class DbTest {
     private Context mContext;
 
     private static final String[] TABLE_NAMES = {
-            RedditgoContract.TABLE_NAME_FRONT_PAGE_HOT,
-            RedditgoContract.TABLE_NAME_FRONT_PAGE_NEW,
-            RedditgoContract.TABLE_NAME_FRONT_PAGE_RISING,
-            RedditgoContract.TABLE_NAME_FRONT_PAGE_CONTROVERSAL,
-            RedditgoContract.TABLE_NAME_FRONT_PAGE_TOP,
-            RedditgoContract.TABLE_NAME_ALL_HOT,
-            RedditgoContract.TABLE_NAME_ALL_NEW,
-            RedditgoContract.TABLE_NAME_ALL_RISING,
-            RedditgoContract.TABLE_NAME_ALL_CONTROVERSAL,
-            RedditgoContract.TABLE_NAME_ALL_TOP,
-            RedditgoContract.TABLE_NAME_SUBMISSION_HOT,
-            RedditgoContract.TABLE_NAME_SUBMISSION_NEW,
-            RedditgoContract.TABLE_NAME_SUBMISSION_RISING,
-            RedditgoContract.TABLE_NAME_SUBMISSION_CONTROVERSAL,
-            RedditgoContract.TABLE_NAME_SUBMISSION_TOP
+            RedditgoContract.TABLE_NAME_FRONT_PAGE,
+            RedditgoContract.TABLE_NAME_ALL,
+            RedditgoContract.TABLE_NAME_SUBMISSION,
     };
 
     @Before
@@ -100,6 +88,7 @@ public class DbTest {
             // Build a HashSet of all of the column names we want to look for
             final HashSet<String> entryColumnHashSet = new HashSet<String>();
             entryColumnHashSet.add(SubmissionColumn.ID);
+            entryColumnHashSet.add(SubmissionColumn.SORTING);
             entryColumnHashSet.add(SubmissionColumn.POST_HINT);
             entryColumnHashSet.add(SubmissionColumn.URL);
             entryColumnHashSet.add(SubmissionColumn.TITLE);
