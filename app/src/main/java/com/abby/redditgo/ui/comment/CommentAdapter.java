@@ -20,6 +20,8 @@ import com.abby.redditgo.model.MyContent;
 import com.abby.redditgo.network.RedditApi;
 import com.abby.redditgo.ui.BaseActivity;
 import com.birbit.android.jobqueue.JobManager;
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 import com.oissela.software.multilevelexpindlistview.MultiLevelExpIndListAdapter;
 
 import net.dean.jraw.models.Comment;
@@ -39,6 +41,7 @@ import butterknife.ButterKnife;
 import static com.abby.redditgo.ui.comment.ComposeCommentActivity.EXTRA_COMMENT_ID;
 import static com.abby.redditgo.ui.comment.ComposeCommentActivity.EXTRA_TITLE;
 import static net.dean.jraw.models.VoteDirection.DOWNVOTE;
+import static net.dean.jraw.models.VoteDirection.NO_VOTE;
 import static net.dean.jraw.models.VoteDirection.UPVOTE;
 
 /**
@@ -46,6 +49,8 @@ import static net.dean.jraw.models.VoteDirection.UPVOTE;
  * Some of this code is copied from https://developer.android.com/training/material/lists-cards.html
  */
 public class CommentAdapter extends MultiLevelExpIndListAdapter {
+    private static final String GA_CATEGORY = "comment vote";
+
     /**
      * View type of an item or group.
      */
@@ -61,6 +66,9 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
 
     @Inject
     JobManager mJobManager;
+
+    @Inject
+    Tracker mTracker;
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
 
@@ -191,11 +199,16 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
                         if (RedditApi.isAuthorized()) {
                             VoteDirection vote;
                             if (comment.getVote() == UPVOTE) {
-                                vote = VoteDirection.NO_VOTE;
+                                vote = NO_VOTE;
                             } else {
                                 vote = UPVOTE;
                             }
                             mJobManager.addJobInBackground(new CommentVoteJob(comment, vote));
+                            mTracker.send(new HitBuilders.EventBuilder()
+                                    .setCategory(GA_CATEGORY)
+                                    .setAction(vote.name())
+                                    .setLabel(comment.getBody())
+                                    .build());
                         } else {
                             EventBus.getDefault().post(new AttemptLoginEvent());
                         }
@@ -208,10 +221,15 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
                         if (RedditApi.isAuthorized()) {
                             VoteDirection vote;
                             if (comment.getVote() == DOWNVOTE) {
-                                vote = VoteDirection.NO_VOTE;
+                                vote = NO_VOTE;
                             } else {
                                 vote = DOWNVOTE;
                             }
+                            mTracker.send(new HitBuilders.EventBuilder()
+                                    .setCategory(GA_CATEGORY)
+                                    .setAction(vote.name())
+                                    .setLabel(comment.getBody())
+                                    .build());
                             mJobManager.addJobInBackground(new CommentVoteJob(comment, vote));
                         } else {
                             EventBus.getDefault().post(new AttemptLoginEvent());

@@ -21,11 +21,13 @@ import net.dean.jraw.http.LoggingMode;
 public class MainApplication extends MultiDexApplication {
 
     private static MainApplication instance;
+
     public static MainApplication getInstance() {
         return instance;
     }
 
     private ApplicationComponent component;
+
     public ApplicationComponent getComponent() {
         return component;
     }
@@ -35,6 +37,8 @@ public class MainApplication extends MultiDexApplication {
         instance = this;
         super.onCreate();
         Stetho.initializeWithDefaults(this);
+
+        RedditgoAds.initAds(this);
         component = DaggerApplicationComponent.builder().applicationModule(new ApplicationModule(this)).build();
 
         RedditClient reddit = new AndroidRedditClient(this);
@@ -42,5 +46,6 @@ public class MainApplication extends MultiDexApplication {
         AuthenticationManager.get().init(reddit, new RefreshTokenHandler(new AndroidTokenStore(this), reddit));
 
     }
+
 
 }

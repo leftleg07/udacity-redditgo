@@ -27,6 +27,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.abby.redditgo.R;
+import com.abby.redditgo.RedditgoAds;
 import com.abby.redditgo.data.RedditgoProvider;
 import com.abby.redditgo.data.SubmissionColumn;
 import com.abby.redditgo.data.SubredditColumn;
@@ -43,6 +44,7 @@ import com.abby.redditgo.ui.BaseActivity;
 import com.abby.redditgo.ui.login.LoginActivity;
 import com.birbit.android.jobqueue.JobManager;
 import com.birbit.android.jobqueue.TagConstraint;
+import com.google.android.gms.analytics.Tracker;
 import com.orhanobut.logger.Logger;
 
 import net.dean.jraw.paginators.Sorting;
@@ -58,9 +60,6 @@ import javax.inject.Inject;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-;
-
-
 public class MainActivity extends BaseActivity implements MainFragment.OnFragmentInteractionListener, LoaderManager.LoaderCallbacks<Cursor> {
     private static final int SUBREDDIT_MENU_INDEX = 2;
     private static final String KEY_TITLE = "_key_title";
@@ -73,6 +72,9 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
     JobManager mJobManager;
 
     @Inject
+    Tracker mTracker;
+
+    @Inject
     ContentResolver mContentResolver;
 
     @BindView(R.id.toolbar)
@@ -83,6 +85,9 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
 
     @BindView(R.id.nav_view)
     NavigationView mNavigationView;
+
+    @BindView(R.id.ad_view)
+    View mAdView;
 
     Button mLoginButton;
     TextView mUserNameText;
@@ -136,13 +141,15 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
             mLastSorting = Sorting.valueOf(sorting);
             mTitleView.setText(title);
             MainFragment fragment = (MainFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
-            if(fragment != null) {
+            if (fragment != null) {
                 fragment.fetchSubmission(mLastSubreddit, mLastSorting);
             }
         }
 
-
         getLoaderManager().initLoader(LOADER_ID_SUBREDDIT, null, this);
+
+        RedditgoAds.loadAds(mAdView);
+
     }
 
     @Override
@@ -175,9 +182,37 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Called when leaving the activity
+     */
+    @Override
+    public void onPause() {
+        if (mAdView != null) {
+            RedditgoAds.pauseAds(mAdView);
+        }
+        super.onPause();
+    }
+
+    /**
+     * Called when returning to the activity
+     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mAdView != null) {
+            RedditgoAds.resumeAds(mAdView);
+        }
+    }
+
+    /**
+     * Called before the activity is destroyed
+     */
 
     @Override
     protected void onDestroy() {
+        if (mAdView != null) {
+            RedditgoAds.destoryAds(mAdView);
+        }
         super.onDestroy();
         EventBus.getDefault().unregister(this);
         mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.SUBMISSION_FETCH_ID);
@@ -284,7 +319,7 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
         values.put(SubmissionColumn.THUMBNAIL, event.submission.getThumbnail());
 
         int count = mContentResolver.update(existingUri, values, null, null);
-        if(count > 0) {
+        if (count > 0) {
             Uri contentUri = null;
             if (mLastSubreddit == null) {
                 contentUri = RedditgoProvider.FrontPage.withSorting(sorting);
@@ -304,7 +339,7 @@ public class MainActivity extends BaseActivity implements MainFragment.OnFragmen
         mJobManager.cancelJobsInBackground(null, TagConstraint.ALL, JobId.SUBMISSION_FETCH_ID);
         mJobManager.addJobInBackground(new SubmissionFetchJob(subreddit, sorting));
         MainFragment fragment = (MainFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
-        if(fragment != null) {
+        if (fragment != null) {
             fragment.fetchSubmission(mLastSubreddit, mLastSorting);
         }
     }

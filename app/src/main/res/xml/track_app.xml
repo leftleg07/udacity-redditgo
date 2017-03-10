@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ga_trackingId">UA-93231933-1</string>
+    <bool name="ga_autoActivityTracking">true</bool>
+    <screenName name="com.abby.redditgo.ui.main.MainActivity">
+        Main screen
+    </screenName>
+    <screenName name="com.abby.redditgo.ui.detail.DetailActivity">
+        Detail screen
+    </screenName>
+    <screenName name="com.abby.redditgo.ui.detail.DetailActivity">
+        Detail screen
+    </screenName>
+
+    <screenName name="com.abby.redditgo.ui.comment.CommentActivity">
+        Comment screen
+    </screenName>
+
+    <screenName name="com.abby.redditgo.ui.comment.ComposeCommentActivity">
+        Compose comment
+    </screenName>
+
+    <screenName name="com.abby.redditgo.ui.login.LoginActivity">
+        Login screen
+    </screenName>
+
+</resources>

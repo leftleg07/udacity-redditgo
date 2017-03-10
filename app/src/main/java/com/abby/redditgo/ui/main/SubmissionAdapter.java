@@ -32,6 +32,8 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.birbit.android.jobqueue.JobManager;
 import com.bumptech.glide.Glide;
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 import com.google.android.youtube.player.YouTubeApiServiceUtil;
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubeIntents;
@@ -51,6 +53,7 @@ import butterknife.ButterKnife;
 import static android.content.Intent.EXTRA_SUBJECT;
 import static android.content.Intent.EXTRA_TEXT;
 import static net.dean.jraw.models.VoteDirection.DOWNVOTE;
+import static net.dean.jraw.models.VoteDirection.NO_VOTE;
 import static net.dean.jraw.models.VoteDirection.UPVOTE;
 
 /**
@@ -58,10 +61,15 @@ import static net.dean.jraw.models.VoteDirection.UPVOTE;
  */
 
 public class SubmissionAdapter extends CursorRecyclerViewAdapter<SubmissionAdapter.ViewHolder> {
+    private static final String GA_CATEGORY = "submission vote";
+
 
     private final View mEmptyView;
     @Inject
     JobManager mJobManager;
+
+    @Inject
+    Tracker mTracker;
 
     private final Context mContext;
     private String mSubreddit;
@@ -102,7 +110,7 @@ public class SubmissionAdapter extends CursorRecyclerViewAdapter<SubmissionAdapt
         long createdTime = cursor.getLong(cursor.getColumnIndex(SubmissionColumn.CREATED_TIME));
         String author = cursor.getString(cursor.getColumnIndex(SubmissionColumn.AUTHOR));
         String subreddit = cursor.getString(cursor.getColumnIndex(SubmissionColumn.SUBREDDIT));
-        final String sorting  = cursor.getString(cursor.getColumnIndex(SubmissionColumn.SORTING));
+        final String sorting = cursor.getString(cursor.getColumnIndex(SubmissionColumn.SORTING));
         long score = cursor.getLong(cursor.getColumnIndex(SubmissionColumn.SCORE));
         long numComments = cursor.getLong(cursor.getColumnIndex(SubmissionColumn.NUM_COMMENTS));
         String thumbnail = cursor.getString(cursor.getColumnIndex(SubmissionColumn.THUMBNAIL));
@@ -137,11 +145,18 @@ public class SubmissionAdapter extends CursorRecyclerViewAdapter<SubmissionAdapt
             @Override
             public void onClick(View v) {
                 if (RedditApi.isAuthorized()) {
+                    VoteDirection newVote;
                     if (vote == UPVOTE) {
-                        mJobManager.addJobInBackground(new SubmissionVoteJob(id, VoteDirection.NO_VOTE));
+                        newVote = NO_VOTE;
                     } else {
-                        mJobManager.addJobInBackground(new SubmissionVoteJob(id, UPVOTE));
+                        newVote = UPVOTE;
                     }
+                    mJobManager.addJobInBackground(new SubmissionVoteJob(id, newVote));
+                    mTracker.send(new HitBuilders.EventBuilder()
+                            .setCategory(GA_CATEGORY)
+                            .setAction(newVote.name())
+                            .setLabel(title)
+                            .build());
                 } else {
                     new MaterialDialog.Builder(mContext)
                             .title(R.string.title_activity_login)
@@ -162,11 +177,18 @@ public class SubmissionAdapter extends CursorRecyclerViewAdapter<SubmissionAdapt
             @Override
             public void onClick(View v) {
                 if (RedditApi.isAuthorized()) {
+                    VoteDirection newVote;
                     if (vote == DOWNVOTE) {
-                        mJobManager.addJobInBackground(new SubmissionVoteJob(id, VoteDirection.NO_VOTE));
+                        newVote = NO_VOTE;
                     } else {
-                        mJobManager.addJobInBackground(new SubmissionVoteJob(id, DOWNVOTE));
+                        newVote = DOWNVOTE;
                     }
+                    mJobManager.addJobInBackground(new SubmissionVoteJob(id, newVote));
+                    mTracker.send(new HitBuilders.EventBuilder()
+                            .setCategory(GA_CATEGORY)
+                            .setAction(newVote.name())
+                            .setLabel(title)
+                            .build());
                 } else {
                     new MaterialDialog.Builder(mContext)
                             .title(R.string.title_activity_login)
@@ -193,9 +215,9 @@ public class SubmissionAdapter extends CursorRecyclerViewAdapter<SubmissionAdapt
             @Override
             public void onClick(View v) {
                 Uri uri;
-                if(mSubreddit == null) {
+                if (mSubreddit == null) {
                     uri = RedditgoProvider.FrontPage.withId(sorting, id);
-                } else if(mSubreddit.equals("all")) {
+                } else if (mSubreddit.equals("all")) {
                     uri = RedditgoProvider.All.withId(sorting, id);
                 } else {
                     uri = RedditgoProvider.Submission.withId(mSubreddit, sorting, id);

@@ -9,6 +9,7 @@ import android.provider.Settings;
 import android.util.Log;
 
 import com.abby.redditgo.MainApplication;
+import com.abby.redditgo.R;
 import com.abby.redditgo.job.BaseJob;
 import com.abby.redditgo.services.MyGcmJobService;
 import com.abby.redditgo.services.MyJobService;
@@ -19,6 +20,9 @@ import com.birbit.android.jobqueue.di.DependencyInjector;
 import com.birbit.android.jobqueue.log.CustomLogger;
 import com.birbit.android.jobqueue.scheduling.FrameworkJobSchedulerService;
 import com.birbit.android.jobqueue.scheduling.GcmJobSchedulerService;
+import com.google.android.gms.analytics.GoogleAnalytics;
+import com.google.android.gms.analytics.Logger;
+import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
@@ -105,8 +109,8 @@ public class ApplicationModule {
                     @Override
                     public void inject(Job job) {
                         ApplicationComponent component = ((MainApplication) mApplicationContext).getComponent();
-                        if(job instanceof BaseJob) {
-                            ((BaseJob)job).inject(component);
+                        if (job instanceof BaseJob) {
+                            ((BaseJob) job).inject(component);
                         }
                     }
                 })
@@ -128,5 +132,23 @@ public class ApplicationModule {
     @Provides
     public ContentResolver provideContentResolver() {
         return mApplicationContext.getContentResolver();
+    }
+
+    /**
+     * google tracker
+     * @return
+     */
+    @Singleton
+    @Provides
+    public Tracker provideTracker() {
+        GoogleAnalytics ga = GoogleAnalytics.getInstance(mApplicationContext);
+
+        // Get the config data for the tracker
+        Tracker tracker = ga.newTracker(R.xml.track_app);
+
+        // Set the log level to verbose.
+        ga.getLogger().setLogLevel(Logger.LogLevel.VERBOSE);
+
+        return tracker;
     }
 }

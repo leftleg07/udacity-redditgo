@@ -1,4 +1,4 @@
-<resources xmlns:xliff="http://schemas.android.com/tools">
+<resources >
     <string name="app_name">udacity-redditgo</string>
     <string name="action_settings">Settings</string>
 

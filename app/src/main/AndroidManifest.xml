@@ -20,7 +20,7 @@
         </activity>
         <activity android:name=".ui.detail.DetailActivity" />
         <activity android:label="Comment" android:name=".ui.comment.CommentActivity" />
-        <activity android:name=".ui.comment.ComposeCommentActivity" />
+        <activity android:label="Compose comment" android:name=".ui.comment.ComposeCommentActivity" />
         <activity
             android:name=".ui.login.LoginActivity"
             android:label="@string/title_activity_login" />
