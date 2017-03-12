@@ -16,7 +16,7 @@ import javax.inject.Inject;
 import butterknife.ButterKnife;
 
 /**
- * A login screen that offers login via email/password.
+ * A signin screen that offers signin via email/password.
  */
 public class LoginActivity extends BaseActivity implements LoginFragment.OnFragmentInteractionListener{
 

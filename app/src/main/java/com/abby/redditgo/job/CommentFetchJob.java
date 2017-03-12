@@ -20,7 +20,7 @@ import org.greenrobot.eventbus.EventBus;
 import java.util.List;
 
 /**
- * Created by gsshop on 2016. 12. 7..
+ * get the submission comment
  */
 public class CommentFetchJob extends Job {
 

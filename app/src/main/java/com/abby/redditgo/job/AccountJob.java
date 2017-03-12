@@ -16,7 +16,7 @@ import org.greenrobot.eventbus.EventBus;
 import java.util.UUID;
 
 /**
- * Created by gsshop on 2016. 10. 31..
+ * get the current logged in account
  */
 
 public class AccountJob extends Job {

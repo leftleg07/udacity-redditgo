@@ -14,7 +14,7 @@ import org.greenrobot.eventbus.EventBus;
 import java.util.UUID;
 
 /**
- * Created by gsshop on 2016. 10. 31..
+ * Sign in
  */
 
 public class SigninJob extends Job {
@@ -49,7 +49,7 @@ public class SigninJob extends Job {
     @Override
     public void onRun() throws Throwable {
 
-        String name = RedditApi.login(username, password);
+        String name = RedditApi.signin(username, password);
         EventBus.getDefault().post(new LoginEvent(name));
 
     }

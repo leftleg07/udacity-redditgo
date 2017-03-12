@@ -106,9 +106,9 @@ public class LoginFragment extends Fragment {
         attemptLogin();
     }
     /**
-     * Attempts to sign in or register the account specified by the login form.
+     * Attempts to sign in or register the account specified by the signin form.
      * If there are form errors (invalid email, missing fields, etc.), the
-     * errors are presented and no actual login attempt is made.
+     * errors are presented and no actual signin attempt is made.
      */
     private void attemptLogin() {
 
@@ -116,7 +116,7 @@ public class LoginFragment extends Fragment {
         mUsernameView.setError(null);
         mPasswordView.setError(null);
 
-        // Store values at the time of the login attempt.
+        // Store values at the time of the signin attempt.
         String email = mUsernameView.getText().toString();
         String password = mPasswordView.getText().toString();
 
@@ -142,12 +142,12 @@ public class LoginFragment extends Fragment {
         }
 
         if (cancel) {
-            // There was an error; don't attempt login and focus the first
+            // There was an error; don't attempt signin and focus the first
             // form field with an error.
             focusView.requestFocus();
         } else {
             // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
+            // perform the user signin attempt.
             showProgress(true);
             if(mListener != null) {
                 mListener.login(email, password);
@@ -167,7 +167,7 @@ public class LoginFragment extends Fragment {
     }
 
     /**
-     * Shows the progress UI and hides the login form.
+     * Shows the progress UI and hides the signin form.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
     private void showProgress(final boolean show) {

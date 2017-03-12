@@ -18,7 +18,7 @@ import org.greenrobot.eventbus.EventBus;
 import java.util.UUID;
 
 /**
- * Created by gsshop on 2016. 12. 7..
+ * delete comment that the authenticated user posted.
  */
 public class CommentDeleteJob extends Job {
 

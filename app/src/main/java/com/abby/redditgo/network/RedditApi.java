@@ -65,7 +65,13 @@ public class RedditApi {
         return reddit.isAuthenticated() && reddit.hasActiveUserContext();
     }
 
-    public static String login(String username, String password) {
+    /**
+     * sign in
+     * @param username
+     * @param password
+     * @return
+     */
+    public static String signin(String username, String password) {
         String clientId = BuildConfig.REDDIT_SCRIPT_CLIENT_ID;
         String clientSecret = BuildConfig.REDDIT_SCRIPT_CLIENT_SECRET;
 
@@ -128,6 +134,10 @@ public class RedditApi {
         return latestSubmissions;
     }
 
+    /**
+     * logged in account
+     * @return
+     */
     public static LoggedInAccount account() {
         return reddit.me();
     }
@@ -140,7 +150,7 @@ public class RedditApi {
     }
 
     /**
-     * reply api
+     * get the submission comment
      */
     public static CommentNode comments(String submissionId, CommentSort sort) throws NetworkException {
         SubmissionRequest request = new SubmissionRequest.Builder(submissionId).sort(sort).build();
@@ -151,12 +161,28 @@ public class RedditApi {
         return node.loadMoreComments(reddit);
     }
 
+    /**
+     * Sends a reply to a Submission
+     * @param submissionId
+     * @param replyText
+     * @return
+     * @throws NetworkException
+     * @throws ApiException
+     */
     public static String replySubmission(String submissionId, String replyText) throws NetworkException, ApiException {
         Submission submission = reddit.getSubmission(submissionId);
         return new AccountManager(reddit).reply(submission, replyText);
     }
 
 
+    /**
+     * Sends a reply to a Comment
+     * @param fullname
+     * @param replyText
+     * @return
+     * @throws NetworkException
+     * @throws ApiException
+     */
     public static String replyComment(final String fullname, String replyText) throws NetworkException, ApiException {
         return account.reply(new Contribution(NullNode.getInstance()) {
             @Override
@@ -166,10 +192,23 @@ public class RedditApi {
         }, replyText);
     }
 
+    /**
+     * delete comment
+     * @param fullname
+     * @throws NetworkException
+     * @throws ApiException
+     */
     public static void deleteComment(String fullname) throws NetworkException, ApiException {
         moderation.delete(fullname);
     }
 
+    /**
+     * Votes on a comment or submission
+     * @param comment
+     * @param voteDirection
+     * @throws NetworkException
+     * @throws ApiException
+     */
     public static void vote(Comment comment, VoteDirection voteDirection) throws NetworkException,  ApiException {
         account.vote(comment, voteDirection);
     }

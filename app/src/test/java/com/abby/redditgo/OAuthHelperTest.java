@@ -221,7 +221,7 @@ public class OAuthHelperTest {
                 }
                 Assert.fail("Failing HTTP status code", e);
             }
-            HtmlForm loginForm = getFirstChild(loginPage.getBody(), "form", "id", "login-form");
+            HtmlForm loginForm = getFirstChild(loginPage.getBody(), "form", "id", "signin-form");
 
             // Change the value of the username and password forms
             Credentials userPassCreds = CredentialsUtils.instance().script();
@@ -257,7 +257,7 @@ public class OAuthHelperTest {
 
             assertEquals(reddit.getOAuthHelper().getAuthStatus(), OAuthHelper.AuthStatus.AUTHORIZED);
         } catch (IOException e) {
-            throw new RuntimeException("Could not login", e);
+            throw new RuntimeException("Could not signin", e);
         }
     }
 

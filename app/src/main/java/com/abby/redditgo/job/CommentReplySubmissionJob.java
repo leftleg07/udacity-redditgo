@@ -17,7 +17,7 @@ import org.greenrobot.eventbus.EventBus;
 import java.util.UUID;
 
 /**
- * Created by gsshop on 2016. 12. 7..
+ * Sends a reply to a Submission
  */
 public class CommentReplySubmissionJob extends Job {
 

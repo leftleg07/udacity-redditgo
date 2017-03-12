@@ -19,7 +19,7 @@ import org.greenrobot.eventbus.EventBus;
 import java.util.UUID;
 
 /**
- * Created by gsshop on 2016. 10. 31..
+ * Votes on a commentß
  */
 
 public class CommentVoteJob extends Job {
