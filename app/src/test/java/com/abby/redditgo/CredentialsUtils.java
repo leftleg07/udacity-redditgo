@@ -13,8 +13,8 @@ public final class CredentialsUtils {
     private CredentialsUtils() {
         String username, password, scriptId, scriptSecret, installedId, installedRedirectUri;
 
-        username = "e07skim";
-        password = "eskim3164";
+        username = BuildConfig.REDDIT_USERNAME;
+        password = BuildConfig.REDDIT_PASSWORD;
 
         scriptId = BuildConfig.REDDIT_SCRIPT_CLIENT_ID;
         scriptSecret = BuildConfig.REDDIT_SCRIPT_CLIENT_SECRET;

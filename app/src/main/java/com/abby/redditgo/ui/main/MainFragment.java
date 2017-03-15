@@ -10,7 +10,7 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,6 +27,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import butterknife.BindInt;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -53,8 +54,11 @@ public class MainFragment extends Fragment implements LoaderManager.LoaderCallba
     @BindView(R.id.recycler_view_empty)
     View mEmptyView;
 
+    @BindInt(R.integer.column_count)
+    int mColumnCount;
+
     private OnFragmentInteractionListener mListener;
-    private LinearLayoutManager mLayoutManager;
+    private GridLayoutManager mLayoutManager;
 
     private int mPosition = -1;
     private int mTotalCount = -1;
@@ -89,7 +93,7 @@ public class MainFragment extends Fragment implements LoaderManager.LoaderCallba
         mRecyclerView.setHasFixedSize(true);
 
         // use a linear layout manager
-        mLayoutManager = new LinearLayoutManager(getContext());
+        mLayoutManager = new GridLayoutManager(getContext(), mColumnCount);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
         // specify an mAdapter (see also next example)

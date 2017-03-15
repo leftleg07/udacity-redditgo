@@ -4,6 +4,7 @@ import android.support.test.filters.LargeTest;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
 
+import com.abby.redditgo.BuildConfig;
 import com.abby.redditgo.R;
 import com.abby.redditgo.event.LoginEvent;
 import com.abby.redditgo.ui.login.LoginActivity;
@@ -35,8 +36,8 @@ public class LoginScreenTest {
 
     CountDownLatch latch;
 
-    private static final String USERNAME = "e07skim";
-    private static final String PASSWORD = "eskim3164";
+    private static final String USERNAME = BuildConfig.REDDIT_USERNAME;
+    private static final String PASSWORD = BuildConfig.REDDIT_PASSWORD;
 
 
     @Rule

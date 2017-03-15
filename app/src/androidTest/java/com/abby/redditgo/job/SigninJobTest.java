@@ -3,6 +3,7 @@ package com.abby.redditgo.job;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
+import com.abby.redditgo.BuildConfig;
 import com.abby.redditgo.MockApplication;
 import com.abby.redditgo.event.LoginEvent;
 import com.birbit.android.jobqueue.JobManager;
@@ -24,6 +25,9 @@ import javax.inject.Inject;
 @RunWith(AndroidJUnit4.class)
 public class SigninJobTest {
     private CountDownLatch signal;
+
+    private static final String USERNAME = BuildConfig.REDDIT_USERNAME;
+    private static final String PASSWORD = BuildConfig.REDDIT_PASSWORD;
 
     @Inject
     JobManager mJobManager;
@@ -48,7 +52,7 @@ public class SigninJobTest {
 
     @Test
     public void testSignin() throws Exception {
-        mJobManager.addJobInBackground(new SigninJob("e07skim", "eskim3164"));
+        mJobManager.addJobInBackground(new SigninJob(USERNAME, PASSWORD));
         signal.await();
     }
 }

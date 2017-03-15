@@ -134,12 +134,12 @@ public class CommentAdapter extends MultiLevelExpIndListAdapter {
         RecyclerView.ViewHolder viewHolder;
         switch (viewType) {
             case VIEW_TYPE_ITEM:
-                int resource = R.layout.recyclerview_item;
+                int resource = R.layout.list_item_comment_item;
                 v = LayoutInflater.from(parent.getContext()).inflate(resource, parent, false);
                 viewHolder = new CommentViewHolder(v);
                 break;
             case VIEW_TYPE_CONTENT:
-                resource = R.layout.recyclerview_content;
+                resource = R.layout.list_item_comment_content;
                 v = LayoutInflater.from(parent.getContext()).inflate(resource, parent, false);
                 viewHolder = new ContentViewHolder(v);
                 break;

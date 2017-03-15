@@ -16,14 +16,6 @@ android {
         multiDexEnabled true
     }
 
-    productFlavors {
-        free {
-            applicationId "com.abby.redditgo.free"
-        }
-        paid {
-            applicationId "com.abby.redditgo.paid"
-        }
-    }
 
     buildTypes {
         release {
@@ -33,17 +25,30 @@ android {
     }
 
     buildTypes.each {
-        it.buildConfigField 'String', 'REDDIT_APP_OWNER', '"redditgo"'
-        it.buildConfigField 'String', 'REDDIT_SCRIPT_CLIENT_ID', '"70W6KTqjiNVs6g"'
-        it.buildConfigField 'String', 'REDDIT_SCRIPT_CLIENT_SECRET', '"pIii0T4uydy0zwgBCR_QXJZmmaQ"'
-        it.buildConfigField 'String', 'REDDIT_SCRIPT_REDIRECT_URL', '"https://github.com/leftleg07/udacity-redditgo"'
+        it.buildConfigField 'String', 'REDDIT_APP_OWNER', RedditAppOwner
+        it.buildConfigField 'String', 'REDDIT_SCRIPT_CLIENT_ID', RedditScriptClientId
+        it.buildConfigField 'String', 'REDDIT_SCRIPT_CLIENT_SECRET', RedditScriptClientSecret
+        it.buildConfigField 'String', 'REDDIT_SCRIPT_REDIRECT_URL', RedditScriptRedirectUrl
 
-        it.buildConfigField 'String', 'REDDIT_INSTALLED_CLIENT_ID', '"e9t7mgVtbjSGvg"'
-        it.buildConfigField 'String', 'REDDIT_INSTALLED_REDIRECT_URI', '"https://github.com/leftleg07/udacity-redditgo"'
+        it.buildConfigField 'String', 'REDDIT_INSTALLED_CLIENT_ID', RedditInstalledClientId
+        it.buildConfigField 'String', 'REDDIT_INSTALLED_REDIRECT_URI', RedditInstalledRedirectUri
 
-        it.buildConfigField 'String', 'REDDIT_WEB_CLIENT_ID', '"69RTve7ITlhFnA"'
-        it.buildConfigField 'String', 'REDDIT_WEB_CLIENT_SECRET', '"_Mk-NAgLGk_toZC9q70Cc2EI0c0"'
-        it.buildConfigField 'String', 'REDDIT_WEB_REDIRECT_URL', '"http://michaelvas.github.io/reddit-app/"'
+        it.buildConfigField 'String', 'REDDIT_WEB_CLIENT_ID', RedditWebClientId
+        it.buildConfigField 'String', 'REDDIT_WEB_CLIENT_SECRET', RedditWebClientSecret
+        it.buildConfigField 'String', 'REDDIT_WEB_REDIRECT_URL', RedditWebRedirectUrl
+
+        it.buildConfigField 'String', 'REDDIT_USERNAME', RedditUsername
+        it.buildConfigField 'String', 'REDDIT_PASSWORD', RedditPassword
+
+    }
+
+    productFlavors {
+        free {
+            applicationId "com.abby.redditgo.free"
+        }
+        paid {
+            applicationId "com.abby.redditgo.paid"
+        }
     }
 
     packagingOptions {

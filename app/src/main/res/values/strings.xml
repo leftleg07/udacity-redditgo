@@ -45,4 +45,5 @@
     <string name="filter_old">Old</string>
     <string name="filter_qa">QA</string>
     <string name="navigation_description">close</string>
+    <string name="title_widget_stock">RedditGo</string>
 </resources>

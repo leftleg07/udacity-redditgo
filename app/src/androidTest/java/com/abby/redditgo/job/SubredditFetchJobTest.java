@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
+import com.abby.redditgo.BuildConfig;
 import com.abby.redditgo.MockApplication;
 import com.abby.redditgo.data.RedditgoProvider;
 import com.abby.redditgo.event.LoginEvent;
@@ -30,6 +31,9 @@ import static com.google.common.truth.Truth.assertThat;
 @RunWith(AndroidJUnit4.class)
 public class SubredditFetchJobTest {
     private CountDownLatch signal;
+
+    private static final String USERNAME = BuildConfig.REDDIT_USERNAME;
+    private static final String PASSWORD = BuildConfig.REDDIT_PASSWORD;
 
     @Inject
     ContentResolver mContentResolver;
@@ -68,7 +72,7 @@ public class SubredditFetchJobTest {
 
     @Test
     public void testSubredditFetchJob() throws Exception {
-        mJobManager.addJobInBackground(new SigninJob("e07skim", "eskim3164"));
+        mJobManager.addJobInBackground(new SigninJob(USERNAME, PASSWORD));
         signal.await();
 
         Cursor cursor = mContentResolver.query(RedditgoProvider.Subreddit.CONTENT_URI, null, null, null, null);

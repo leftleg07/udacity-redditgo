@@ -9,6 +9,7 @@ import android.support.test.filters.LargeTest;
 import android.support.test.runner.AndroidJUnit4;
 import android.support.v4.widget.SwipeRefreshLayout;
 
+import com.abby.redditgo.BuildConfig;
 import com.abby.redditgo.MockApplication;
 import com.abby.redditgo.R;
 import com.abby.redditgo.event.LoginEvent;
@@ -64,8 +65,9 @@ public class CommentScreenTest {
     @Inject
     UUID mDeviceId;
 
-    private static final String USERNAME = "e07skim";
-    private static final String PASSWORD = "eskim3164";
+    private static final String USERNAME = BuildConfig.REDDIT_USERNAME;
+    private static final String PASSWORD = BuildConfig.REDDIT_PASSWORD;
+
     private SwipeRefreshLayout mSwipeRefresh;
 
     @Before

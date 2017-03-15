@@ -92,7 +92,7 @@ public class SubmissionAdapter extends CursorRecyclerViewAdapter<SubmissionAdapt
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         // create a new view
         View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_submission, parent, false);
+                .inflate(R.layout.list_item_submission, parent, false);
         // set the view's size, margins, paddings and layout parameters
         ViewHolder vh = new ViewHolder(v);
         return vh;
