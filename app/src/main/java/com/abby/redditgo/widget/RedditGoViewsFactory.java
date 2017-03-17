@@ -39,12 +39,7 @@ public class RedditGoViewsFactory implements RemoteViewsService.RemoteViewsFacto
         }
 
         mCursor = mContext.getContentResolver().query(RedditgoProvider.FrontPage.CONTENT_URI, null, null, null, null);
-//        mCursor = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
-//                new String[]{QuoteColumns._ID, QuoteColumns.SYMBOL, QuoteColumns.BIDPRICE,
-//                        QuoteColumns.PERCENT_CHANGE, QuoteColumns.CHANGE, QuoteColumns.ISUP},
-//                QuoteColumns.ISCURRENT + " = ?",
-//                new String[]{"1"},
-//                null);
+
     }
 
     @Override
